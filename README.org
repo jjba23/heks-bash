@@ -1,1 +1,14 @@
+#+title: Heks Bash 🧙‍♂️
+#+options: toc:nil
+#+author: Josep Bigorra
+#+email: jjbigorra@gmail.com
 
+[[https://jointhefreeworld.org/ggg/dist/shell-bash.svg]]  [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]]    [[https://jointhefreeworld.org/ggg/dist/license-fdl13+.svg]]
+
+The all-mighty magical /Witch Bash/ - De alle-machtige magische /Heks Bash/
+
+The project is written mostly in Lisp (Guile Scheme) and Bash (shell script).
+
+This project uses [[https://codeberg.org/jjba23/maak][Maak, the infinitely extensible command-runner]] as automation system.
+
+This config uses [[https://github.com/akinomyoga/ble.sh][ble.sh]] and to install it you should check out the ~maak.scm~ file, or their GitHub.
