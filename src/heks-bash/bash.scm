@@ -245,8 +245,14 @@ maak_completions=\"${maak_store}/share/scripts/maak-completion.bash\"
           (list (string-join bash-postlude "\n\n"))))
 
 (define (install-bash)
-  (with-output-to-file (format #f "~a/.bashrc"
-                               (getenv "HOME"))
-    (lambda ()
-      (display (string-join (bash-config #:clone-dir heks-bash-clone-dir) "\n")))))
+  (let* ((display-config-thunk (lambda ()
+                                 (display (string-join (bash-config
+                                                        #:clone-dir
+                                                        heks-bash-clone-dir)
+                                                       "\n")))))
+    (with-output-to-file (format #f "~a/.bashrc"
+                                 (getenv "HOME"))
+      display-config-thunk)
+    (with-output-to-file ".bashrc"
+      display-config-thunk)))
 
