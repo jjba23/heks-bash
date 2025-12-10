@@ -7,8 +7,103 @@
 
 The all-mighty magical /Witch Bash/ - De alle-machtige magische /Heks Bash/
 
+*heks-bash* is a declarative configuration manager for Bash, written in
+GNU Guile Scheme.
+
+It allows you to define your shell environment---aliases, exports,
+functions, and hooks---using Scheme data structures, and
+programmatically generates a robust =.bashrc=. It is designed to work
+seamlessly within a GNU Guix environment.
+
 The project is written mostly in Lisp (Guile Scheme) and Bash (shell script).
 
 This project uses [[https://codeberg.org/jjba23/maak][Maak, the infinitely extensible command-runner]] as automation system.
 
 This config uses [[https://github.com/akinomyoga/ble.sh][ble.sh]] and to install it you should check out the ~maak.scm~ file, or their GitHub.
+
+If you like my work, please support me by [[https://bmc.link/jjbigorra][buying me a cup of coffee ☕]] so I can continue with a lot of motivation.
+
+---------------
+
+
+** 🌟 Features
+- *Declarative Configuration:* Define aliases, exports, and functions
+  using Scheme lists and parameters.
+- *Modern Shell Experience:*
+  - *Intelligent Completion:* Case-insensitive, spelling correction
+    (=cdspell=, =dirspell=), and auto-cd.
+  - *History Management:* Large history size, timestamped entries, and
+    duplicate deduplication.
+  - *Integrations:* Pre-configured support for
+    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line
+    Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),
+    and *[[https://direnv.net/][direnv]]*.
+- *Guix & Nix Friendly:* Automatically handles paths for Guix profiles
+  and provides aliases for =nix develop=.
+- *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,
+  =emacs=, and file navigation.
+
+** 📦 Dependencies
+
+- *GNU Guile*  
+- *Optional Tools:* =fzf=, =maak= =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
+
+** 🚀 Usage
+
+=heks-bash= is designed to be used as Scheme code which you tweak to generate a shell script. To generate your
+=.bashrc=, import the module or run the installation function.
+
+*** Basic Installation
+
+Create a script (e.g., =install-env.scm=) or run in your REPL:
+
+#+begin_src scheme
+(use-modules (heks-bash bash))
+
+;; Generates and writes configuration to ~/.bashrc
+(install-bash)
+#+end_src
+
+*** Customization
+
+The module uses
+[[https://www.gnu.org/software/guile/manual/html_node/Parameters.html][Guile Parameters]]
+for configuration, allowing you to dynamically bind new values without changing the original source code.
+
+*Key Parameters:*
+
+- =bash-aliases=: Association list of command aliases.
+- =bash-vars=: Environment variables (colors, history settings).
+- =bash-exports=: Variables to be exported (e.g., =PS1=, =PATH=).
+- =heks-bash-clone-dir=: Location of the source repository.
+
+** 🛠 Configuration Details
+
+*** Default Aliases
+
+The module comes with sensible defaults for navigation and development:
+
+| Alias       | Command               | Description                              |
+|-------------+-----------------------+------------------------------------------|
+| =..=, =...= | =cd ..=, =cd ../..=   | Quick navigation up directories          |
+| =ll=, =l=   | =ls -lAh ...=         | List all files with human-readable sizes |
+| =tree=      | =tree --dirsfirst -F= | Tree view                                |
+| =e=         | =emacsclient -t=      | Edit in Emacs terminal client            |
+| =fetch=     | =fastfetch=           | System info fetch                        |
+| =docker=    | =podman=              | Aliases Docker commands to Podman        |
+
+*** Custom Functions
+- =glog=: Decompresses a =.gz= log file and cats it to stdout.
+- =hgrep=: Greps through your command history.
+
+many more...  
+
+*** The Prompt
+
+The generated =PS1= prompt is minimal and functional (yes it also has a lambda λ), featuring:
+
+- *Bold User@Host*
+- *Current Working Directory*
+- *Guix Environment Indicator* (=[env]=) if active.
+- *Purple Greeting* (“Hallo, mens...”) on shell startup.
+
