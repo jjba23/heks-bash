@@ -253,6 +253,6 @@ maak_completions=\"${maak_store}/share/scripts/maak-completion.bash\"
     (with-output-to-file (format #f "~a/.bashrc"
                                  (getenv "HOME"))
       display-config-thunk)
-    (with-output-to-file ".bashrc"
+    (with-output-to-file "bashrc.bash"
       display-config-thunk)))
 
