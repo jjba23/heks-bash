@@ -45,6 +45,8 @@ If you like my work, please support me by [[https://bmc.link/jjbigorra][buying m
 
 ** 📦 Dependencies
 
+The project provides a sample ~.bashrc~ file you can take and use, but if you wanna use the Lisp code and programatically build the bashrc, then you need:
+
 - *GNU Guile*  
 - *Optional Tools:* =fzf=, =maak= =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
 
