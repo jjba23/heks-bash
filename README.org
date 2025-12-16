@@ -109,3 +109,9 @@ The generated =PS1= prompt is minimal and functional (yes it also has a lambda �
 - *Guix Environment Indicator* (=[env]=) if active.
 - *Purple Greeting* (“Hallo, mens...”) on shell startup.
 
+
+----------------
+
+** Ble.sh
+
+You can update  ble.sh with ~ble-update~

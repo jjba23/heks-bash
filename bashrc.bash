@@ -2,7 +2,7 @@
 # ====== HEKS-BASH configuration ======
 [ -f /etc/bashrc ] && . /etc/bashrc
 
-[[ $- == *i* ]] && source -- ~/.local/share/blesh/ble.sh --attach=none || true|| true
+[[ $- == *i* ]] && source -- ~/.local/share/blesh/ble.sh || true
 
 bind "set completion-ignore-case on"
 

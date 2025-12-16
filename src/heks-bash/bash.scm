@@ -44,8 +44,8 @@
 (define bash-prelude
   (list "[ -f /etc/bashrc ] && . /etc/bashrc"
         (string-append "[[ $- == *i* ]] && "
-                       (format #f "source -- ~a --attach=none || true"
-                               (heks-bash-ble-sh-dir)) "|| true")
+                       (format #f "source -- ~a"
+                               (heks-bash-ble-sh-dir)) " || true")
         ;; Perform file completion in a case insensitive fashion
         "bind \"set completion-ignore-case on\""
         ;; Treat hyphens and underscores as equivalent
