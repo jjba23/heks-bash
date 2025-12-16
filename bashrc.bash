@@ -18,45 +18,47 @@ shopt -s dirspell 2> /dev/null
 
 shopt -s cdspell 2> /dev/null
 
-GREEN_TEXT="$(tput setaf 2)"
+export GREEN_TEXT="$(tput setaf 2)"
 
-BLUE_TEXT="$(tput setaf 4)"
+export BLUE_TEXT="$(tput setaf 4)"
 
-PURPLE_TEXT="$(tput setaf 5)"
+export PURPLE_TEXT="$(tput setaf 5)"
 
-RED_TEXT="$(tput setaf 1)"
+export RED_TEXT="$(tput setaf 1)"
 
-RESET_TEXT="$(tput sgr0)"
+export RESET_TEXT="$(tput sgr0)"
 
-BOLD_TEXT="$(tput bold)"
+export BOLD_TEXT="$(tput bold)"
 
-SHELL_GREETING_MSG="${PURPLE_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}"
+export SHELL_GREETING_MSG="${PURPLE_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}"
 
-CDPATH="."
+export CDPATH="."
 
-HISTSIZE="500000"
+export HISTSIZE="500000"
 
-HISTFILESIZE="100000"
+export HISTFILESIZE="100000"
 
-HISTTIMEFORMAT="%F %T  | "
+export HISTTIMEFORMAT="%F %T  | "
 
-HISTCONTROL="ignoreboth:erasedups"
-
-PROMPT_COMMAND="history -a"
-
-PROMPT_DIRTRIM="2"
-
-GUIX_PROFILE="$HOME/.guix-profile"
-
-GUIX_LOCPATH="$GUIX_PROFILE/lib/locale"
-
-GH_PACKAGES_USERNAME="jjbavdb"
-
-GH_PACKAGES_TOKEN=""$(gh auth token)""
-
-export PS1="${BOLD_TEXT}\u@\h${RESET_TEXT}: \w${GUIX_ENVIRONMENT:+ [env]}\n${BOLD_TEXT}λ${RESET_TEXT} "
+export HISTCONTROL="ignoreboth:erasedups"
 
 export HISTIGNORE="&:[ ]*:exit:ls:bg:fg:history:clear"
+
+export PROMPT_COMMAND="history -a"
+
+export PROMPT_DIRTRIM="2"
+
+export GUIX_PROFILE="$HOME/.guix-profile"
+
+export GUIX_LOCPATH="$GUIX_PROFILE/lib/locale"
+
+export GH_PACKAGES_USERNAME="jjbavdb"
+
+export GH_PACKAGES_TOKEN=""$(gh auth token)""
+
+export DOCKER_HOST="unix:///tmp/podman.sock"
+
+export PS1="${BOLD_TEXT}\u@\h${RESET_TEXT}: \w${GUIX_ENVIRONMENT:+ [env]}\n${BOLD_TEXT}λ${RESET_TEXT} "
 
 glog () {
 	sudo gzip -d "$1.gz" && cat "$1"

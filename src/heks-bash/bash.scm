@@ -21,7 +21,6 @@
   #:use-module (ice-9 exceptions)
   #:export (install-bash bash-vars
                          bash-path-appends
-                         bash-exports
                          bash-aliases
                          bash-functions
                          bash-postlude
@@ -29,7 +28,6 @@
                          serialize-bash-alias
                          serialize-bash-var
                          serialize-bash-path-append
-                         serialize-bash-export
                          serialize-bash-function
                          bash-config
                          heks-bash-clone-dir))
@@ -80,28 +78,29 @@
                     (HISTTIMEFORMAT . "%F %T  | ")
                     ;; Avoid duplicate history entries
                     (HISTCONTROL . "ignoreboth:erasedups")
+                    ;; Ignore certain commands and don't log them to history
+                    (HISTIGNORE . "&:[ ]*:exit:ls:bg:fg:history:clear")
                     ;; Record each line as it gets issued
                     (PROMPT_COMMAND . "history -a")
                     ;; Automatically trim long paths in the prompt
                     (PROMPT_DIRTRIM . "2")
-                    ;;
+                    ;; Guix settings
                     (GUIX_PROFILE . "$HOME/.guix-profile")
                     (GUIX_LOCPATH . "$GUIX_PROFILE/lib/locale")
-                    ;; work
+                    ;; Work
                     (GH_PACKAGES_USERNAME . "jjbavdb")
-                    (GH_PACKAGES_TOKEN . "\"$(gh auth token)\""))))
+                    (GH_PACKAGES_TOKEN . "\"$(gh auth token)\"")
+                    ;; Podman
+                    (DOCKER_HOST . "unix:///tmp/podman.sock")
+                    ;; Bash prompt
+                    (PS1 unquote
+                         (string-append "${BOLD_TEXT}\\u@\\h${RESET_TEXT}: "
+                                        "\\w${GUIX_ENVIRONMENT:+ [env]}\\n"
+                                        "${BOLD_TEXT}λ${RESET_TEXT} ")))))
 
 (define bash-path-appends
   (make-parameter `("${KREW_ROOT:-$HOME/.krew}/bin" "$HOME/.local/bin"
                     "$HOME/bin" "$HOME/.guix-profile/bin")))
-
-(define bash-exports
-  (make-parameter (list (cons 'PS1
-                              (string-append
-                               "${BOLD_TEXT}\\u@\\h${RESET_TEXT}: "
-                               "\\w${GUIX_ENVIRONMENT:+ [env]}\\n"
-                               "${BOLD_TEXT}λ${RESET_TEXT} "))
-                        (cons 'HISTIGNORE "&:[ ]*:exit:ls:bg:fg:history:clear"))))
 
 (define* (bash-aliases #:key clone-dir)
   `((".." . "cd ..;pwd") ("..." . "cd ../..;pwd")
@@ -209,17 +208,12 @@ maak_completions=\"${maak_store}/share/scripts/maak-completion.bash\"
           (cdr a)))
 
 (define (serialize-bash-var v)
-  (format #f "\n~a=\"~a\""
+  (format #f "\nexport ~a=\"~a\""
           (car v)
           (cdr v)))
 
 (define (serialize-bash-path-append a)
   (format #f "\nexport PATH=\"~a:$PATH\"" a))
-
-(define (serialize-bash-export e)
-  (format #f "\nexport ~a=\"~a\""
-          (car e)
-          (cdr e)))
 
 (define (serialize-bash-function f)
   (format #f "\n~a () {\n\t~a\n}\n"
@@ -234,8 +228,6 @@ maak_completions=\"${maak_store}/share/scripts/maak-completion.bash\"
           (list (string-join bash-prelude "\n\n"))
           (map serialize-bash-var
                (bash-vars))
-          (map serialize-bash-export
-               (bash-exports))
           (map serialize-bash-function
                (bash-functions))
           (map serialize-bash-alias
