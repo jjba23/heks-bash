@@ -39,12 +39,12 @@
   (make-parameter "~/Hacking/heks-linux"))
 
 (define heks-bash-ble-sh-dir
-  (make-parameter "~/.local/share/blesh/ble.sh"))
+  (make-parameter "~/.local/share/blesh"))
 
 (define bash-prelude
   (list "[ -f /etc/bashrc ] && . /etc/bashrc"
         (string-append "[[ $- == *i* ]] && "
-                       (format #f "source -- ~a"
+                       (format #f "source -- ~a/ble.sh"
                                (heks-bash-ble-sh-dir)) " || true")
         ;; Perform file completion in a case insensitive fashion
         "bind \"set completion-ignore-case on\""
@@ -89,7 +89,7 @@
                     (GUIX_LOCPATH . "$GUIX_PROFILE/lib/locale")
                     ;; Work
                     (GH_PACKAGES_USERNAME . "jjbavdb")
-                    (GH_PACKAGES_TOKEN . "\"$(gh auth token)\"")
+                    (GH_PACKAGES_TOKEN . "\"\"")
                     ;; Podman
                     (DOCKER_HOST . "unix:///tmp/podman.sock")
                     ;; Bash prompt
@@ -177,30 +177,31 @@
    ;; Load bash_completion
    "include /run/current-system/profile/share/bash-completion/bash_completion"
    ;; Integrate Guix-managed Bash & Maak
-   "
-maak_bin_install_dir=$(which maak)
-maak_install_dir=$(realpath \"${maak_bin_install_dir}\")
-maak_bin=$(dirname \"${maak_install_dir}\")
-maak_store=$(dirname \"${maak_bin}\")
-maak_completions=\"${maak_store}/share/scripts/maak-completion.bash\"
-"
+   "maak_bin_loc=$(command -v maak)"
+   "maak_bin_dir=${maak_bin_loc%/*}"
+   "maak_install_dir=${maak_bin_dir%/*}"
+   "maak_completions=\"${maak_install_dir}/share/scripts/maak-completion.bash\""
    ;; Load Maak completion
-   "[ -f \"${maak_completions}\" ] && . \"${maak_completions}\""
-
+   "include \"${maak_completions}\""
    ;; Load fzf (must be after bash_completion)
    "eval \"$(fzf --bash)\" || true"
    ;; Load Nix profile
    "include /run/current-system/profile/etc/profile.d/nix.sh"
-   ;; Load ble
-   ;; "[[ ! ${BLE_VERSION-} ]] || ble-attach"
-   ;; "ble-import -d /run/current-system/profile/share/blesh/contrib/integration/fzf-completion"
-   ;; "ble-import -d /run/current-system/profile/share/blesh/contrib/integration/fzf-key-bindings"
-   ;; Greet user
-   "shell-greeting"
+   ;; ble.sh settings
+   "ble-face -s command_builtin fg=purple"
+   "ble-face -s command_builtin_dot fg=purple,bold"
+   (format #f "ble-import -d ~a/contrib/integration/fzf-completion.bash"
+           (heks-bash-ble-sh-dir))
+   (format #f "ble-import -d ~a/contrib/integration/fzf-key-bindings.bash"
+           (heks-bash-ble-sh-dir))
    ;; Load direnv
    "eval \"$(direnv hook bash)\""
    ;; Source user Guix profile
-   "[ -f \"$GUIX_PROFILE/etc/profile\" ] && . \"$GUIX_PROFILE/etc/profile\""))
+   "[ -f \"$GUIX_PROFILE/etc/profile\" ] && . \"$GUIX_PROFILE/etc/profile\""
+   ;; GitHub token refresh if needed, in background
+   "[[ -z \"$GH_PACKAGES_TOKEN\" ]] && export GH_PACKAGES_TOKEN=\"$(gh auth token)\" || true"
+   ;; Greet user
+   "shell-greeting"))
 
 (define (serialize-bash-alias a)
   (format #f "\nalias ~a=\"~a\""

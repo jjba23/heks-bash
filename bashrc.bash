@@ -54,7 +54,7 @@ export GUIX_LOCPATH="$GUIX_PROFILE/lib/locale"
 
 export GH_PACKAGES_USERNAME="jjbavdb"
 
-export GH_PACKAGES_TOKEN=""$(gh auth token)""
+export GH_PACKAGES_TOKEN=""""
 
 export DOCKER_HOST="unix:///tmp/podman.sock"
 
@@ -149,22 +149,32 @@ shopt -s checkwinsize
 
 include /run/current-system/profile/share/bash-completion/bash_completion
 
+maak_bin_loc=$(command -v maak)
 
-maak_bin_install_dir=$(which maak)
-maak_install_dir=$(realpath "${maak_bin_install_dir}")
-maak_bin=$(dirname "${maak_install_dir}")
-maak_store=$(dirname "${maak_bin}")
-maak_completions="${maak_store}/share/scripts/maak-completion.bash"
+maak_bin_dir=${maak_bin_loc%/*}
 
+maak_install_dir=${maak_bin_dir%/*}
 
-[ -f "${maak_completions}" ] && . "${maak_completions}"
+maak_completions="${maak_install_dir}/share/scripts/maak-completion.bash"
+
+include "${maak_completions}"
 
 eval "$(fzf --bash)" || true
 
 include /run/current-system/profile/etc/profile.d/nix.sh
 
-shell-greeting
+ble-face -s command_builtin fg=purple
+
+ble-face -s command_builtin_dot fg=purple,bold
+
+ble-import -d ~/.local/share/blesh/contrib/integration/fzf-completion.bash
+
+ble-import -d ~/.local/share/blesh/contrib/integration/fzf-key-bindings.bash
 
 eval "$(direnv hook bash)"
 
 [ -f "$GUIX_PROFILE/etc/profile" ] && . "$GUIX_PROFILE/etc/profile"
+
+[[ -z "$GH_PACKAGES_TOKEN" ]] && export GH_PACKAGES_TOKEN="$(gh auth token)" || true
+
+shell-greeting
