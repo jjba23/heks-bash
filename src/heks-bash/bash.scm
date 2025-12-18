@@ -116,6 +116,7 @@
     (fetch . "fastfetch")
     (vanilla-emacs . "emacs -Q")
     (restart-emacs . "pkill emacs && emacs --daemon")
+    (keys-show . "wshowkeys -a top -a right -m 12 -t 2")
     (fr unquote
         (format #f "cd ~a && maak reconfigure"
                 (heks-linux-clone-dir)))
