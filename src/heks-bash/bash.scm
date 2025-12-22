@@ -59,16 +59,19 @@
         ;; Correct spelling errors during tab-completion
         "shopt -s dirspell 2> /dev/null"
         ;; Correct spelling errors in arguments supplied to cd
-        "shopt -s cdspell 2> /dev/null"))
+        "shopt -s cdspell 2> /dev/null"
+        "include() {
+    [[ -f \"$1\" ]] && source \"$1\"
+}"
+        ;; Load heks-linux bash bridge
+        "include ~/.bash-heks-linux-bridge.bash"))
 
 (define bash-vars
   (make-parameter `((GREEN_TEXT . "$(tput setaf 2)")
-                    (BLUE_TEXT . "$(tput setaf 4)")
-                    (PURPLE_TEXT . "$(tput setaf 5)")
                     (RED_TEXT . "$(tput setaf 1)")
                     (RESET_TEXT . "$(tput sgr0)")
                     (BOLD_TEXT . "$(tput bold)")
-                    (SHELL_GREETING_MSG . "${PURPLE_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}")
+                    (SHELL_GREETING_MSG . "${HEKS_BASH_HIGHLIGHT_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}")
                     ;; Directory where cd looks for targets
                     (CDPATH . ".")
                     ;; Increase history size
@@ -150,7 +153,6 @@
 (define bash-functions
   (make-parameter `((glog . "sudo gzip -d \"$1.gz\" && cat \"$1\"")
                     (hgrep . "history | grep \"$1\"")
-                    (include . "[[ -f \"$1\" ]] && source \"$1\"")
                     (work-github-actions-version-replacer unquote
                                                           (string-append
                                                            "find \"$1\" -type f \\( "

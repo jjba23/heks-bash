@@ -18,11 +18,13 @@ shopt -s dirspell 2> /dev/null
 
 shopt -s cdspell 2> /dev/null
 
+include() {
+    [[ -f "$1" ]] && source "$1"
+}
+
+include ~/.bash-heks-linux-bridge.bash
+
 export GREEN_TEXT="$(tput setaf 2)"
-
-export BLUE_TEXT="$(tput setaf 4)"
-
-export PURPLE_TEXT="$(tput setaf 5)"
 
 export RED_TEXT="$(tput setaf 1)"
 
@@ -30,7 +32,7 @@ export RESET_TEXT="$(tput sgr0)"
 
 export BOLD_TEXT="$(tput bold)"
 
-export SHELL_GREETING_MSG="${PURPLE_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}"
+export SHELL_GREETING_MSG="${HEKS_BASH_HIGHLIGHT_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}"
 
 export CDPATH="."
 
@@ -67,11 +69,6 @@ glog () {
 
 hgrep () {
 	history | grep "$1"
-}
-
-
-include () {
-	[[ -f "$1" ]] && source "$1"
 }
 
 
