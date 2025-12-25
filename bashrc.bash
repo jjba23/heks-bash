@@ -113,7 +113,15 @@ alias restart-emacs="pkill emacs && emacs --daemon"
 
 alias keys-show="wshowkeys -a top -a right -m 12 -t 1"
 
-alias fr="cd ~/Hacking/heks-linux && maak reconfigure"
+alias sr="cd ~/Hacking/heks-linux && maak reconfigure"
+
+alias hr="cd ~/Hacking/heks-linux && maak home-reconfigure"
+
+alias install-dnfs="cd ~/Hacking/heks-linux && maak install-dnfs"
+
+alias install-flatpaks="cd ~/Hacking/heks-linux && maak install-flatpaks"
+
+alias upd="cd ~/Hacking/heks-linux && maak update-flatpaks && maak update-dnfs"
 
 alias direnv-mode="direnv export bash"
 

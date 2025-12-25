@@ -120,23 +120,21 @@
     (vanilla-emacs . "emacs -Q")
     (restart-emacs . "pkill emacs && emacs --daemon")
     (keys-show . "wshowkeys -a top -a right -m 12 -t 1")
-    (fr unquote
+    (sr unquote
         (format #f "cd ~a && maak reconfigure"
                 (heks-linux-clone-dir)))
-    ;; (fr unquote
-    ;; (format #f "cd ~a && maak fr" clone-dir))
-    ;; (sr unquote
-    ;; (format #f "cd ~a && maak sr" clone-dir))
-    ;; (jr unquote
-    ;; (format #f "cd ~a && maak jr" clone-dir))
-    ;; (npi unquote
-    ;; (format #f "cd ~a && maak npi" clone-dir))
-    ;; (npu unquote
-    ;; (format #f "cd ~a && maak npu" clone-dir))
-    ;; (fpi unquote
-    ;; (format #f "cd ~a && maak fpi" clone-dir))
-    ;; (fpu unquote
-    ;; (format #f "cd ~a && maak fpu" clone-dir))
+    (hr unquote
+        (format #f "cd ~a && maak home-reconfigure"
+                (heks-linux-clone-dir)))
+    (install-dnfs unquote
+        (format #f "cd ~a && maak install-dnfs"
+                (heks-linux-clone-dir)))
+    (install-flatpaks unquote
+        (format #f "cd ~a && maak install-flatpaks"
+                (heks-linux-clone-dir)))
+    (upd unquote
+        (format #f "cd ~a && maak update-flatpaks && maak update-dnfs"
+                (heks-linux-clone-dir)))
     (direnv-mode . "direnv export bash")
     (scala-dev unquote
                (format #f "nix develop ~a/resources/flakes/scala-dev/"
