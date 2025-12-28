@@ -107,6 +107,8 @@ alias k="pkill"
 
 alias fetch="fastfetch"
 
+alias cat="bat"
+
 alias vanilla-emacs="emacs -Q"
 
 alias restart-emacs="pkill emacs && emacs --daemon"
