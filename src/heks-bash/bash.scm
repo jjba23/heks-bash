@@ -116,7 +116,7 @@
     (l . "ls -lAh --group-directories-first")
     (e . "emacsclient -t")
     (k . "pkill")
-    (fetch . "fastfetch")
+    (fetch . "fastfetch --logo ~/Hacking/heks-linux/resources/varesa-avatar-small-2.png  --logo-padding 4 --logo-padding-top 1")
     (cat . bat)
     (vanilla-emacs . "emacs -Q")
     (restart-emacs . "pkill emacs && emacs --daemon")
