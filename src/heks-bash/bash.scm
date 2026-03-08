@@ -87,6 +87,9 @@
                     (PROMPT_COMMAND . "history -a")
                     ;; Automatically trim long paths in the prompt
                     (PROMPT_DIRTRIM . "2")
+                    ;; Pager
+                    (PAGER . "most")
+                    (MANPAGER . "most")
                     ;; Guix settings
                     (GUIX_PROFILE . "$HOME/.guix-profile")
                     (GUIX_LOCPATH . "$GUIX_PROFILE/lib/locale")

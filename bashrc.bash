@@ -50,6 +50,10 @@ export PROMPT_COMMAND="history -a"
 
 export PROMPT_DIRTRIM="2"
 
+export PAGER="most"
+
+export MANPAGER="most"
+
 export GUIX_PROFILE="$HOME/.guix-profile"
 
 export GUIX_LOCPATH="$GUIX_PROFILE/lib/locale"
