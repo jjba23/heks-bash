@@ -121,7 +121,7 @@
     (e . "emacsclient -t")
     (k . "pkill")
     (fetch . "fastfetch")
-    (cat . bat)
+    ;;(cat . bat)
     (vanilla-emacs . "emacs -Q")
     (restart-emacs . "pkill emacs && emacs --daemon")
     (keys-show . "wshowkeys -a top -a right -m 12 -t 1")
