@@ -106,8 +106,11 @@
 
 (define bash-path-appends
   (make-parameter `("${KREW_ROOT:-$HOME/.krew}/bin" "$HOME/.local/bin"
-                    "$HOME/bin" "$HOME/.guix-profile/bin" "/usr/bin"
-                    "/usr/sbin")))
+                    "$HOME/bin"
+                    "$HOME/.guix-profile/bin"
+                    "/usr/bin"
+                    "/usr/sbin"
+                    "/usr/local/bin")))
 
 (define* (bash-aliases #:key clone-dir)
   `((".." . "cd ..;pwd") ("..." . "cd ../..;pwd")
@@ -121,7 +124,7 @@
     (e . "emacsclient -t")
     (k . "pkill")
     (fetch . "fastfetch")
-    ;;(cat . bat)
+    ;; (cat . bat)
     (vanilla-emacs . "emacs -Q")
     (restart-emacs . "pkill emacs && emacs --daemon")
     (keys-show . "wshowkeys -a top -a right -m 12 -t 1")

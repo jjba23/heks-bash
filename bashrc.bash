@@ -111,8 +111,6 @@ alias k="pkill"
 
 alias fetch="fastfetch"
 
-alias cat="bat"
-
 alias vanilla-emacs="emacs -Q"
 
 alias restart-emacs="pkill emacs && emacs --daemon"
@@ -154,6 +152,8 @@ export PATH="$HOME/.guix-profile/bin:$PATH"
 export PATH="/usr/bin:$PATH"
 
 export PATH="/usr/sbin:$PATH"
+
+export PATH="/usr/local/bin:$PATH"
 shopt -s histappend
 
 shopt -s cmdhist
