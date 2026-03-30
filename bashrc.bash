@@ -150,6 +150,10 @@ export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
 
 export PATH="$HOME/.guix-profile/bin:$PATH"
+
+export PATH="/usr/bin:$PATH"
+
+export PATH="/usr/sbin:$PATH"
 shopt -s histappend
 
 shopt -s cmdhist

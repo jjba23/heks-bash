@@ -106,7 +106,8 @@
 
 (define bash-path-appends
   (make-parameter `("${KREW_ROOT:-$HOME/.krew}/bin" "$HOME/.local/bin"
-                    "$HOME/bin" "$HOME/.guix-profile/bin")))
+                    "$HOME/bin" "$HOME/.guix-profile/bin" "/usr/bin"
+                    "/usr/sbin")))
 
 (define* (bash-aliases #:key clone-dir)
   `((".." . "cd ..;pwd") ("..." . "cd ../..;pwd")
@@ -131,14 +132,14 @@
         (format #f "cd ~a && maak home-reconfigure"
                 (heks-linux-clone-dir)))
     (install-dnfs unquote
-        (format #f "cd ~a && maak install-dnfs"
-                (heks-linux-clone-dir)))
+                  (format #f "cd ~a && maak install-dnfs"
+                          (heks-linux-clone-dir)))
     (install-flatpaks unquote
-        (format #f "cd ~a && maak install-flatpaks"
-                (heks-linux-clone-dir)))
+                      (format #f "cd ~a && maak install-flatpaks"
+                              (heks-linux-clone-dir)))
     (upd unquote
-        (format #f "cd ~a && maak update-flatpaks && maak update-dnfs"
-                (heks-linux-clone-dir)))
+         (format #f "cd ~a && maak update-flatpaks && maak update-dnfs"
+                 (heks-linux-clone-dir)))
     (direnv-mode . "direnv export bash")
     (scala-dev unquote
                (format #f "nix develop ~a/resources/flakes/scala-dev/"
