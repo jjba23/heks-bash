@@ -56,7 +56,7 @@ export MANPAGER="most"
 
 export GUIX_PROFILE="$HOME/.guix-profile"
 
-export GUIX_LOCPATH="$GUIX_PROFILE/lib/locale"
+export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
 
 export GH_PACKAGES_USERNAME="jjbavdb"
 
@@ -64,7 +64,7 @@ export GH_PACKAGES_TOKEN=""""
 
 export DOCKER_HOST="unix:///tmp/podman.sock"
 
-export PS1="${BOLD_TEXT}\u@\h${RESET_TEXT}: \w${GUIX_ENVIRONMENT:+ [env]}\n${BOLD_TEXT}λ${RESET_TEXT} "
+export PS1="${BOLD_TEXT}\u@\h${RESET_TEXT}: \w${GUIX_ENVIRONMENT:+ [env]}\n${BOLD_TEXT}?${RESET_TEXT} "
 
 glog () {
 	sudo gzip -d "$1.gz" && cat "$1"
