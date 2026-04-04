@@ -92,7 +92,7 @@
                     (MANPAGER . "most")
                     ;; Guix settings
                     (GUIX_PROFILE . "$HOME/.guix-profile")
-                    (GUIX_LOCPATH . "$GUIX_PROFILE/lib/locale")
+                    (GUIX_LOCPATH . "$GUIX_ENVIRONMENT/lib/locale")
                     ;; Work
                     (GH_PACKAGES_USERNAME . "jjbavdb")
                     (GH_PACKAGES_TOKEN . "\"\"")
