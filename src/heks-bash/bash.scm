@@ -73,7 +73,7 @@
                     (BOLD_TEXT . "$(tput bold)")
                     (SHELL_GREETING_MSG . "${HEKS_BASH_HIGHLIGHT_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}")
                     ;; Directory where cd looks for targets
-                    (CDPATH . ".")
+                    (CDPATH . ".:$HOME/Hacking:$HOME/Work")
                     ;; Increase history size
                     (HISTSIZE . 500000)
                     (HISTFILESIZE . 100000)
@@ -234,8 +234,9 @@
             (else (cdr f)))))
 
 (define* (bash-config #:key clone-dir)
-  (append '("" "# ====== HEKS-BASH configuration ======")
-          (list (string-join bash-prelude "\n\n"))
+  (append '("" "# ====== HEKS-BASH configuration ======"
+            "" "# auto-generated file! do not edit unless you know what you're doing!")
+          (list (string-join bash-prelude "\n"))
           (map serialize-bash-var
                (bash-vars))
           (map serialize-bash-function
