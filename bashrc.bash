@@ -47,7 +47,7 @@ export MANPAGER="most"
 
 export GUIX_PROFILE="$HOME/.guix-profile"
 
-export GUIX_LOCPATH="$GUIX_PROFILE/lib/locale"
+export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
 
 export GH_PACKAGES_USERNAME="jjbavdb"
 

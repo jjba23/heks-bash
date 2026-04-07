@@ -92,7 +92,7 @@
                     (MANPAGER . "most")
                     ;; Guix settings
                     (GUIX_PROFILE . "$HOME/.guix-profile")
-                    (GUIX_LOCPATH . "$GUIX_PROFILE/lib/locale")
+                    (GUIX_LOCPATH . "$HOME/.guix-profile/lib/locale")
                     ;; Work
                     (GH_PACKAGES_USERNAME . "jjbavdb")
                     (GH_PACKAGES_TOKEN . "\"\"")
@@ -249,6 +249,7 @@
 
 (define (install-bash)
   (let* ((display-config-thunk (lambda ()
+                                 (set-port-encoding! (current-output-port) "UTF-8")
                                  (display (string-join (bash-config
                                                         #:clone-dir
                                                         heks-bash-clone-dir)
