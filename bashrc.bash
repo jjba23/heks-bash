@@ -1,27 +1,18 @@
-
 # ====== HEKS-BASH configuration ======
+# auto-generated file! do not edit unless you know what you're doing!
+
 [ -f /etc/bashrc ] && . /etc/bashrc
-
 [[ $- == *i* ]] && source -- ~/.local/share/blesh/ble.sh || true
-
 bind "set completion-ignore-case on"
-
 bind "set completion-map-case on"
-
 bind "set show-all-if-ambiguous on"
-
 bind "set mark-symlinked-directories on"
-
 shopt -s autocd 2> /dev/null
-
 shopt -s dirspell 2> /dev/null
-
 shopt -s cdspell 2> /dev/null
-
 include() {
     [[ -f "$1" ]] && source "$1"
 }
-
 include ~/.bash-heks-linux-bridge.bash
 
 export GREEN_TEXT="$(tput setaf 2)"
@@ -34,7 +25,7 @@ export BOLD_TEXT="$(tput bold)"
 
 export SHELL_GREETING_MSG="${HEKS_BASH_HIGHLIGHT_TEXT}Hallo, mens. De computer heeft je gemist. (Zoem. Bleep. Beep.)${RESET_TEXT}"
 
-export CDPATH="."
+export CDPATH=".:$HOME/Hacking:$HOME/Work"
 
 export HISTSIZE="500000"
 

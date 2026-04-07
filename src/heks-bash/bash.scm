@@ -234,8 +234,8 @@
             (else (cdr f)))))
 
 (define* (bash-config #:key clone-dir)
-  (append '("" "# ====== HEKS-BASH configuration ======"
-            "" "# auto-generated file! do not edit unless you know what you're doing!")
+  (append '("# ====== HEKS-BASH configuration ======"
+            "# auto-generated file! do not edit unless you know what you're doing!" "")
           (list (string-join bash-prelude "\n"))
           (map serialize-bash-var
                (bash-vars))
