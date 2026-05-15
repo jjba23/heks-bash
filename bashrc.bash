@@ -169,6 +169,8 @@ include "${maak_completions}"
 
 eval "$(fzf --bash)" || true
 
+eval "$(~/.local/bin/mise activate bash)" || true
+
 include /run/current-system/profile/etc/profile.d/nix.sh
 
 ble-face -s command_builtin fg=purple

@@ -194,6 +194,8 @@
    "include \"${maak_completions}\""
    ;; Load fzf (must be after bash_completion)
    "eval \"$(fzf --bash)\" || true"
+   ;; Load mise
+   "eval \"$(~/.local/bin/mise activate bash)\" || true"
    ;; Load Nix profile
    "include /run/current-system/profile/etc/profile.d/nix.sh"
    ;; ble.sh settings
@@ -259,4 +261,3 @@
       display-config-thunk)
     (with-output-to-file "bashrc.bash"
       display-config-thunk)))
-
