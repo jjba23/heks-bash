@@ -126,6 +126,7 @@
     (fetch . "fastfetch")
     ;; (cat . bat)
     (vanilla-emacs . "emacs -Q")
+    (tui-emacs . "alacritty -o 'keyboard.bindings=[]' -e emacsclient -t &")
     (restart-emacs . "pkill emacs && emacs --daemon")
     (keys-show . "wshowkeys -a top -a right -m 12 -t 1")
     (sr unquote

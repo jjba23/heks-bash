@@ -104,6 +104,8 @@ alias fetch="fastfetch"
 
 alias vanilla-emacs="emacs -Q"
 
+alias tui-emacs="alacritty -o 'keyboard.bindings=[]' -e emacsclient -t &"
+
 alias restart-emacs="pkill emacs && emacs --daemon"
 
 alias keys-show="wshowkeys -a top -a right -m 12 -t 1"
