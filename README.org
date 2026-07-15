@@ -7,8 +7,9 @@
 
 The all-mighty magical /Witch Bash/
 
-- *Declarative Configuration:* Define aliases, exports, and functions  using Scheme lists and parameters.
-- *Modern Shell Experience:*
+ *Declarative Configuration* with aliases, customization, exports, and functions  using Lisp (Guile Scheme) lists and parameters.
+
+Modern Shell Experience with:
   - *Intelligent Completion:* Case-insensitive, spelling correction    (=cdspell=, =dirspell=), and auto-cd.
   - *History Management:* Large history size, timestamped entries, and    duplicate deduplication.
   - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
@@ -17,7 +18,7 @@ The all-mighty magical /Witch Bash/
 
   Heks is also best friends, this heks-bash is best used with the [[https://codeberg.org/jjba23/heks-linux][Heks GNU/Linux system]] but should be compatible across a large range of systems out of the box and minimal dependencies.
 
-The project is written mostly in Lisp (Guile Scheme) and Bash (shell script).
+The project is written mostly in Lisp  and Bash (shell script).
 
 This project uses [[https://codeberg.org/jjba23/maak][Maak, the infinitely extensible command-runner]] as automation system.
 
