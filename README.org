@@ -5,10 +5,7 @@
 
 [[https://jointhefreeworld.org/ggg/dist/shell-bash.svg]] [[https://jointhefreeworld.org/ggg/dist/scheme-guile.svg]]  [[https://jointhefreeworld.org/ggg/dist/maak.svg]]  [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]]    [[https://jointhefreeworld.org/ggg/dist/license-fdl13+.svg]] [[https://jointhefreeworld.org/ggg/dist/gnu-guix.svg]]
 
-The all-mighty magical /Witch Bash/ - De alle-machtige magische /Heks Bash/
-
-*heks-bash* is a declarative configuration manager for Bash, written in
-GNU Guile Scheme.
+The all-mighty magical /Witch Bash/
 
 - *Declarative Configuration:* Define aliases, exports, and functions  using Scheme lists and parameters.
 - *Modern Shell Experience:*
@@ -40,9 +37,7 @@ The project uses
 for configuration, allowing you to dynamically and lexically work with the config customization.
 
 
-  ------------------------
-
-[[https://jointhefreeworld.org/static-assets/heks/heks-catppuccin.png]]
+------------------
 
 
 [[https://jointhefreeworld.org/static-assets/heks/screen-2026-07-15-23-05-24.png]]
@@ -121,6 +116,12 @@ We require a human in the loop for all contributions. The use of autonomous AI a
 
 
 ---------
+
+
+
+[[https://jointhefreeworld.org/static-assets/heks/heks-catppuccin.png]]
+
+--------
 
 * Code of conduct
 
