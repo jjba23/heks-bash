@@ -33,13 +33,18 @@ If you like my work, please support me by [[https://bmc.link/jjbigorra][buying m
 
 The project provides a sample compiled [[file:bashrc.bash][.bashrc file]] you can take and use.
 
-🐰 If you really want to go down the rabbit hole, then you  wanna use the Lisp code and programatically build the bashrc, then you need:
+🐰 If you really want to go down the rabbit hole, then you  wanna use the Lisp code and programatically build the bashrc, then you need *GNU Guix and Guile* to compile the ~*.scm~ code to a Bash config. Optional Tools are:  =maak= , =fzf=, =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
 
-- *GNU Guix and Guile* to compile the ~*.scm~ code to a Bash config
-- *Optional Tools:*  =maak= , =fzf=, =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
+The project uses
+[[https://www.gnu.org/software/guile/manual/html_node/Parameters.html][Guile Parameters]]
+for configuration, allowing you to dynamically and lexically work with the config customization.
 
-=heks-bash= is designed to be used as Scheme code which you tweak to generate a shell script. To generate your
-=.bashrc=, import the module or run the installation function.
+
+  ------------------------
+
+[[https://jointhefreeworld.org/static-assets/heks/heks-catppuccin.png]]
+
+--------------------------
 
 Create a script (e.g., =install-env.scm=) or run in your REPL:
 
@@ -51,15 +56,8 @@ Create a script (e.g., =install-env.scm=) or run in your REPL:
 #+end_src
 
 
-The module uses
-[[https://www.gnu.org/software/guile/manual/html_node/Parameters.html][Guile Parameters]]
-for configuration, allowing you to dynamically bind new values without changing the original source code.
 
-------------------------
-
-[[https://jointhefreeworld.org/static-assets/heks/heks-catppuccin.png]]
-
---------------------------
+-----------
 
 *Key Parameters:*
 
