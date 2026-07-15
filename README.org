@@ -10,10 +10,15 @@ The all-mighty magical /Witch Bash/ - De alle-machtige magische /Heks Bash/
 *heks-bash* is a declarative configuration manager for Bash, written in
 GNU Guile Scheme.
 
-It allows you to define your shell environment---aliases, exports,
-functions, and hooks---using Scheme data structures, and
-programmatically generates a robust =.bashrc=. It is designed to work
-seamlessly within a GNU Guix environment.
+- *Declarative Configuration:* Define aliases, exports, and functions  using Scheme lists and parameters.
+- *Modern Shell Experience:*
+  - *Intelligent Completion:* Case-insensitive, spelling correction    (=cdspell=, =dirspell=), and auto-cd.
+  - *History Management:* Large history size, timestamped entries, and    duplicate deduplication.
+  - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
+- *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=.
+- *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation.
+
+  Heks is also best friends, this heks-bash is best used with the [[https://codeberg.org/jjba23/heks-linux][Heks GNU/Linux system]] but should be compatible across a large range of systems out of the box and minimal dependencies.
 
 The project is written mostly in Lisp (Guile Scheme) and Bash (shell script).
 
@@ -26,36 +31,15 @@ If you like my work, please support me by [[https://bmc.link/jjbigorra][buying m
 ---------------
 
 
-** 🌟 Features
-- *Declarative Configuration:* Define aliases, exports, and functions
-  using Scheme lists and parameters.
-- *Modern Shell Experience:*
-  - *Intelligent Completion:* Case-insensitive, spelling correction
-    (=cdspell=, =dirspell=), and auto-cd.
-  - *History Management:* Large history size, timestamped entries, and
-    duplicate deduplication.
-  - *Integrations:* Pre-configured support for
-    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line
-    Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),
-    and *[[https://direnv.net/][direnv]]*.
-- *Guix & Nix Friendly:* Automatically handles paths for Guix profiles
-  and provides aliases for =nix develop=.
-- *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,
-  =emacs=, and file navigation.
+The project provides a sample compiled [[file:bashrc.bash][.bashrc file]] you can take and use.
 
-** 📦 Dependencies
+🐰 If you really want to go down the rabbit hole, then you  wanna use the Lisp code and programatically build the bashrc, then you need:
 
-The project provides a sample ~.bashrc~ file you can take and use, but if you wanna use the Lisp code and programatically build the bashrc, then you need:
-
-- *GNU Guile*
-- *Optional Tools:* =fzf=, =maak= =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
-
-** 🚀 Usage
+- *GNU Guix and Guile* to compile the ~*.scm~ code to a Bash config
+- *Optional Tools:*  =maak= , =fzf=, =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
 
 =heks-bash= is designed to be used as Scheme code which you tweak to generate a shell script. To generate your
 =.bashrc=, import the module or run the installation function.
-
-*** Basic Installation
 
 Create a script (e.g., =install-env.scm=) or run in your REPL:
 
@@ -66,11 +50,16 @@ Create a script (e.g., =install-env.scm=) or run in your REPL:
 (install-bash)
 #+end_src
 
-*** Customization
 
 The module uses
 [[https://www.gnu.org/software/guile/manual/html_node/Parameters.html][Guile Parameters]]
 for configuration, allowing you to dynamically bind new values without changing the original source code.
+
+------------------------
+
+[[https://jointhefreeworld.org/static-assets/heks/heks-catppuccin.png]]
+
+--------------------------
 
 *Key Parameters:*
 
