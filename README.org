@@ -44,6 +44,10 @@ for configuration, allowing you to dynamically and lexically work with the confi
 
 [[https://jointhefreeworld.org/static-assets/heks/heks-catppuccin.png]]
 
+
+[[https://jointhefreeworld.org/static-assets/heks/screen-2026-07-15-23-05-24.png]]
+
+
 --------------------------
 
 Create a script (e.g., =install-env.scm=) or run in your REPL:
