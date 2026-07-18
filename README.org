@@ -11,10 +11,11 @@ The all-mighty magical /Witch Bash/
 
 Modern Shell Experience with:
   - *Intelligent Completion:* Case-insensitive, spelling correction    (=cdspell=, =dirspell=), and auto-cd.
+  - Dynamic funny and customizable greetings
   - *History Management:* Large history size, timestamped entries, and    duplicate deduplication.
   - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
-- *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=.
-- *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation.
+  - *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=.
+  - *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation.
 
   Heks is also best friends, this heks-bash is best used with the [[https://codeberg.org/jjba23/heks-linux][Heks GNU/Linux system]] but should be compatible across a large range of systems out of the box and minimal dependencies.
 
