@@ -1,5 +1,5 @@
 # ====== HEKS-BASH configuration ======
-# auto-generated file! do not edit unless you know what you're doing!
+# auto-generated file!
 
 [ -f /etc/bashrc ] && . /etc/bashrc
 [[ $- == *i* ]] && source -- ~/.local/share/blesh/ble.sh || true
@@ -10,10 +10,9 @@ bind "set mark-symlinked-directories on"
 shopt -s autocd 2> /dev/null
 shopt -s dirspell 2> /dev/null
 shopt -s cdspell 2> /dev/null
-include() {
-    [[ -f "$1" ]] && source "$1"
-}
+include() { [[ -f "$1" ]] && source "$1"; }
 include ~/.bash-heks-linux-bridge.bash
+
 
 export GREEN_TEXT="$(tput setaf 2)"
 
@@ -51,7 +50,7 @@ export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
 
 export GH_PACKAGES_USERNAME="jjbavdb"
 
-export GH_PACKAGES_TOKEN=""""
+export GH_PACKAGES_TOKEN=""
 
 export DOCKER_HOST="unix:///tmp/podman.sock"
 
@@ -147,46 +146,27 @@ export PATH="/usr/bin:$PATH"
 export PATH="/usr/sbin:$PATH"
 
 export PATH="/usr/local/bin:$PATH"
+
 shopt -s histappend
-
 shopt -s cmdhist
-
 set -o noclobber
-
 set -o emacs
-
 shopt -s checkwinsize
-
 include /run/current-system/profile/share/bash-completion/bash_completion
-
-maak_bin_loc=$(command -v maak)
-
-maak_bin_dir=${maak_bin_loc%/*}
-
-maak_install_dir=${maak_bin_dir%/*}
-
-maak_completions="${maak_install_dir}/share/scripts/maak-completion.bash"
-
-include "${maak_completions}"
-
-eval "$(fzf --bash)" || true
-
-eval "$(~/.local/bin/mise activate bash)" || true
-
+if command -v maak &>/dev/null; then
+  maak_bin_loc=$(command -v maak)
+  maak_bin_dir=${maak_bin_loc%/*}
+  maak_install_dir=${maak_bin_dir%/*}
+  include "${maak_install_dir}/share/scripts/maak-completion.bash"
+fi
+command -v fzf &>/dev/null && eval "$(fzf --bash)"
+[[ -f ~/.local/bin/mise ]] && eval "$(~/.local/bin/mise activate bash)"
 include /run/current-system/profile/etc/profile.d/nix.sh
-
 ble-face -s command_builtin fg=purple
-
 ble-face -s command_builtin_dot fg=purple,bold
-
 ble-import -d ~/.local/share/blesh/contrib/integration/fzf-completion.bash
-
 ble-import -d ~/.local/share/blesh/contrib/integration/fzf-key-bindings.bash
-
-eval "$(direnv hook bash)"
-
+command -v direnv &>/dev/null && eval "$(direnv hook bash)"
 [ -f "$GUIX_PROFILE/etc/profile" ] && . "$GUIX_PROFILE/etc/profile"
-
-[[ -z "$GH_PACKAGES_TOKEN" ]] && export GH_PACKAGES_TOKEN="$(gh auth token)" || true
-
+command -v gh &>/dev/null && [[ -z "$GH_PACKAGES_TOKEN" ]] && export GH_PACKAGES_TOKEN="$(gh auth token)"
 shell-greeting
