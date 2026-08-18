@@ -166,8 +166,8 @@
                     (MANPAGER . "most")
                     (GUIX_PROFILE . "$HOME/.guix-profile")
                     (GUIX_LOCPATH . "$HOME/.guix-profile/lib/locale")
-                    (GH_PACKAGES_USERNAME . "jjbavdb")
-                    (GH_PACKAGES_TOKEN . "")
+                    ;; (GH_PACKAGES_USERNAME . "jjbavdb")
+                    ;; (GH_PACKAGES_TOKEN . "")
                     (DOCKER_HOST . "unix:///tmp/podman.sock")
                     (PS1 unquote
                          (string-append "${BOLD_TEXT}\\u@\\h${RESET_TEXT}: "
@@ -274,7 +274,7 @@
 
    "command -v direnv &>/dev/null && eval \"$(direnv hook bash)\""
    "[ -f \"$GUIX_PROFILE/etc/profile\" ] && . \"$GUIX_PROFILE/etc/profile\""
-   "command -v gh &>/dev/null && [[ -z \"$GH_PACKAGES_TOKEN\" ]] && export GH_PACKAGES_TOKEN=\"$(gh auth token)\""
+   ;; "command -v gh &>/dev/null && [[ -z \"$GH_PACKAGES_TOKEN\" ]] && export GH_PACKAGES_TOKEN=\"$(gh auth token)\""
    "shell-greeting"))
 
 ;; Serialization Functions
@@ -319,7 +319,7 @@
                                  (set-port-encoding! (current-output-port)
                                                      "UTF-8")
                                  (display (string-join (bash-config) "\n")))))
-    
+
     (when (file-exists? target-rc)
       (let ((backup-rc (string-append target-rc ".bak")))
         (when (file-exists? backup-rc)

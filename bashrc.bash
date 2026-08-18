@@ -46,10 +46,6 @@ export GUIX_PROFILE="$HOME/.guix-profile"
 
 export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
 
-export GH_PACKAGES_USERNAME="jjbavdb"
-
-export GH_PACKAGES_TOKEN=""
-
 export DOCKER_HOST="unix:///tmp/podman.sock"
 
 export PS1="${BOLD_TEXT}\u@\h${RESET_TEXT}: \w${GUIX_ENVIRONMENT:+ [env]}\n${BOLD_TEXT}λ${RESET_TEXT} "
@@ -249,5 +245,4 @@ ble-import -d ~/.local/share/blesh/contrib/integration/fzf-completion.bash
 ble-import -d ~/.local/share/blesh/contrib/integration/fzf-key-bindings.bash
 command -v direnv &>/dev/null && eval "$(direnv hook bash)"
 [ -f "$GUIX_PROFILE/etc/profile" ] && . "$GUIX_PROFILE/etc/profile"
-command -v gh &>/dev/null && [[ -z "$GH_PACKAGES_TOKEN" ]] && export GH_PACKAGES_TOKEN="$(gh auth token)"
 shell-greeting
