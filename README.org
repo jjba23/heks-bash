@@ -1,4 +1,4 @@
-#+title: Heks Bash 💲
+#+title: Heks BASH 💲
 #+options: toc:nil
 #+author: Josep Bigorra
 #+email: jjbigorra@gmail.com
