@@ -25,6 +25,9 @@
                                #:verbose? #t))
 
 (define (install-ble-sh)
-  ($ '("cd /tmp &&" "git clone --recursive --depth 1 --shallow-submodules "
-       "https://github.com/akinomyoga/ble.sh.git" " &&"
-       "make -C ble.sh install PREFIX=~/.local")))
+  (delete-file-recursively "/tmp/ble.sh")
+  ($ (list "cd /tmp &&"
+           "git clone --recursive --depth 1 --shallow-submodules "
+           "https://github.com/akinomyoga/ble.sh.git" " &&"
+           (~ "make -C ble.sh install PREFIX=~a/.local"
+              (getenv "HOME")))))
