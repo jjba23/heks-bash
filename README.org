@@ -1,19 +1,17 @@
-#+title: Heks Bash 🧙‍♂️
+#+title: Heks Bash 💲
 #+options: toc:nil
 #+author: Josep Bigorra
 #+email: jjbigorra@gmail.com
 
 [[https://jointhefreeworld.org/ggg/dist/shell-bash.svg]] [[https://jointhefreeworld.org/ggg/dist/scheme-guile.svg]]  [[https://jointhefreeworld.org/ggg/dist/maak.svg]]  [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]]    [[https://jointhefreeworld.org/ggg/dist/license-fdl13+.svg]] [[https://jointhefreeworld.org/ggg/dist/gnu-guix.svg]]
 
-The all-mighty magical /Witch Bash/
+The all-mighty magical /Witch Bourne Again Shell declarative configuration/, 💲 supporting integration with many handy CLI tooling and handy aliases, customization, exports, and functions  using Lisp (Guile Scheme).
 
- *Declarative Configuration* with aliases, customization, exports, and functions  using Lisp (Guile Scheme) lists and parameters.
-
-Modern Shell Experience with:
+Modern Shell Experience ✨ with:
+  - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
   - *Intelligent Completion:* Case-insensitive, spelling correction    (=cdspell=, =dirspell=), and auto-cd.
   - Dynamic funny and customizable greetings
   - *History Management:* Large history size, timestamped entries, and    duplicate deduplication.
-  - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
   - *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=.
   - *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation.
 
