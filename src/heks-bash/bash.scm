@@ -166,6 +166,7 @@
                     (MANPAGER . "most")
                     (GUIX_PROFILE . "$HOME/.guix-profile")
                     (GUIX_LOCPATH . "$HOME/.guix-profile/lib/locale")
+                    (EDITOR . "smart_emacsclient")
                     ;; (GH_PACKAGES_USERNAME . "jjbavdb")
                     ;; (GH_PACKAGES_TOKEN . "")
                     (DOCKER_HOST . "unix:///tmp/podman.sock")
@@ -173,6 +174,47 @@
                          (string-append "${BOLD_TEXT}\\u@\\h${RESET_TEXT}: "
                                         "\\w${GUIX_ENVIRONMENT:+ [env]}\\n"
                                         "${BOLD_TEXT}λ${RESET_TEXT} ")))))
+
+(define (mkdir-p path)
+  "Recursively creates PATH and all required parent directories."
+  (unless (or (string-null? path)
+              (file-exists? path))
+    (let ((parent (dirname path)))
+      (when (and (not (string=? parent path))
+                 (not (string=? parent ".")))
+        (mkdir-p parent))
+      (catch 'system-error
+             (lambda ()
+               (mkdir path))
+             (lambda (key . args)
+               (unless (and (file-exists? path)
+                            (eq? 'directory
+                                 (stat:type (stat path))))
+                 (apply throw key args)))))))
+
+(define (ensure-smart-emacsclient-bin)
+  (let* ((home (getenv "HOME"))
+         (bin-dir (format #f "~a/.local/bin" home))
+         (script-path (format #f "~a/smart_emacsclient" bin-dir))
+         (script-content
+          "#!/usr/bin/env bash
+if [ -n \"$DISPLAY\" ] || [ -n \"$WAYLAND_DISPLAY\" ]; then
+    exec emacsclient -a \"\" -c \"$@\"
+else
+    exec emacsclient -a \"\" -nw \"$@\"
+fi
+"))
+
+    (unless (file-exists? bin-dir)
+      (mkdir-p bin-dir))
+
+    (when (file-exists? script-path)
+      (delete-file script-path))
+    (dirname script-path)
+    (with-output-to-file script-path
+      (lambda ()
+        (display script-content)))
+    (chmod script-path #o755)))
 
 (define bash-path-prepends
   (make-parameter '("${KREW_ROOT:-$HOME/.krew}/bin" "$HOME/.local/bin"
@@ -319,7 +361,7 @@
                                  (set-port-encoding! (current-output-port)
                                                      "UTF-8")
                                  (display (string-join (bash-config) "\n")))))
-
+    (ensure-smart-emacsclient-bin)
     (when (file-exists? target-rc)
       (let ((backup-rc (string-append target-rc ".bak")))
         (when (file-exists? backup-rc)

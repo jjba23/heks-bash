@@ -46,6 +46,8 @@ export GUIX_PROFILE="$HOME/.guix-profile"
 
 export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
 
+export EDITOR="smart_emacsclient"
+
 export DOCKER_HOST="unix:///tmp/podman.sock"
 
 export PS1="${BOLD_TEXT}\u@\h${RESET_TEXT}: \w${GUIX_ENVIRONMENT:+ [env]}\n${BOLD_TEXT}λ${RESET_TEXT} "
