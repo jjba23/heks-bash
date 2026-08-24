@@ -232,12 +232,6 @@ set -o noclobber
 set -o emacs
 shopt -s checkwinsize
 include /run/current-system/profile/share/bash-completion/bash_completion
-if command -v maak &>/dev/null; then
-  maak_bin_loc=$(command -v maak)
-  maak_bin_dir=${maak_bin_loc%/*}
-  maak_install_dir=${maak_bin_dir%/*}
-  include "${maak_install_dir}/share/scripts/maak-completion.bash"
-fi
 command -v fzf &>/dev/null && eval "$(fzf --bash)"
 [[ -f ~/.local/bin/mise ]] && eval "$(~/.local/bin/mise activate bash)"
 include /run/current-system/profile/etc/profile.d/nix.sh

@@ -296,13 +296,6 @@ fi
    "shopt -s checkwinsize"
    "include /run/current-system/profile/share/bash-completion/bash_completion"
 
-   "if command -v maak &>/dev/null; then"
-   "  maak_bin_loc=$(command -v maak)"
-   "  maak_bin_dir=${maak_bin_loc%/*}"
-   "  maak_install_dir=${maak_bin_dir%/*}"
-   "  include \"${maak_install_dir}/share/scripts/maak-completion.bash\""
-   "fi"
-
    "command -v fzf &>/dev/null && eval \"$(fzf --bash)\""
    "[[ -f ~/.local/bin/mise ]] && eval \"$(~/.local/bin/mise activate bash)\""
 
@@ -316,7 +309,6 @@ fi
 
    "command -v direnv &>/dev/null && eval \"$(direnv hook bash)\""
    "[ -f \"$GUIX_PROFILE/etc/profile\" ] && . \"$GUIX_PROFILE/etc/profile\""
-   ;; "command -v gh &>/dev/null && [[ -z \"$GH_PACKAGES_TOKEN\" ]] && export GH_PACKAGES_TOKEN=\"$(gh auth token)\""
    "shell-greeting"))
 
 ;; Serialization Functions
