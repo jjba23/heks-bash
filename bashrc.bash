@@ -38,9 +38,9 @@ export PROMPT_COMMAND="history -a"
 
 export PROMPT_DIRTRIM="2"
 
-export PAGER="most"
+export PAGER="less"
 
-export MANPAGER="most"
+export MANPAGER="less"
 
 export GUIX_PROFILE="$HOME/.guix-profile"
 
