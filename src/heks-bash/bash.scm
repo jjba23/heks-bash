@@ -23,6 +23,9 @@
   #:export (install-bash bash-vars
                          bash-identity
                          shell-lib-filename
+                         lesskey-filename
+                         lesskey-target-path
+                         read-source-file
                          serialize-bash-assignment
                          bash-path-prepends
                          bash-aliases
@@ -50,6 +53,11 @@
 ;; into the generated bashrc instead of being quoted as Scheme strings.
 (define shell-lib-filename
   (make-parameter "shell-lib.bash"))
+
+;; The pager keymap. Same idea: a plain data file next to this module, shared
+;; verbatim with the other two machines, installed as $XDG_CONFIG_HOME/lesskey.
+(define lesskey-filename
+  (make-parameter "lesskey"))
 
 ;; Machine identity. These CC_* variables are read by the shared shell
 ;; library to render the prompt and the greeting; changing them is all it
@@ -90,8 +98,6 @@
                     (HISTTIMEFORMAT . "%F %T  | ")
                     (HISTCONTROL . "ignoreboth:erasedups")
                     (HISTIGNORE . "&:[ ]*:exit:ls:bg:fg:history:clear:cd:pwd")
-                    (PAGER . "less")
-                    (MANPAGER . "less")
                     (GUIX_PROFILE . "$HOME/.guix-profile")
                     (GUIX_LOCPATH . "$HOME/.guix-profile/lib/locale")
                     (EDITOR . "smart_emacsclient")
@@ -99,10 +105,11 @@
                     ;; (GH_PACKAGES_TOKEN . "")
                     (DOCKER_HOST . "unix:///tmp/podman.sock"))))
 
-;; NOTE: PS1, PROMPT_COMMAND and the old [env] marker are gone: the prompt is
-;; rebuilt on every command by (shell-lib.bash)'s __cc_prompt, which adds the
-;; machine badge, the trimmed path, the git segment and env badges for Guix
-;; shells, Nix shells and Python venvs.
+;; NOTE: PS1, PROMPT_COMMAND, PAGER and the old [env] marker are gone: the
+;; prompt is rebuilt on every command by (shell-lib.bash)'s __cc_prompt, which
+;; adds the machine badge, the trimmed path, the git segment and env badges for
+;; Guix shells, Nix shells and Python venvs; the pager environment (LESS,
+;; LESSKEYIN) is set by the same library.
 
 (define (mkdir-p path)
   "Recursively creates PATH and all required parent directories."
@@ -244,25 +251,37 @@ only read by the shared shell library."
           (car a)
           (cdr a)))
 
-(define (read-shell-lib)
-  "Return the contents of the shared shell library as a string.
-The library sits next to this module, so look there first and fall back to the
+(define (read-source-file name)
+  "Return the contents of the repository file @var{name} as a string.
+The file sits next to this module, so look there first and fall back to the
 repository-relative path for setups that load compiled code."
   (let* ((here (and (current-filename)
-                    (dirname (current-filename))))
-         (name (shell-lib-filename)))
+                    (dirname (current-filename)))))
     (let loop
         ((paths (list (and here
                            (format #f "~a/~a" here name))
                       (format #f "src/heks-bash/~a" name))))
       (cond ((null? paths)
-             (error "heks-bash: cannot find the shared shell library"
-                    name))
+             (error "heks-bash: cannot find the shared file" name))
             ((and (car paths)
                   (file-exists? (car paths)))
              (call-with-input-file (car paths)
                get-string-all))
             (else (loop (cdr paths)))))))
+
+(define (read-shell-lib)
+  "Return the contents of the shared shell library as a string."
+  (read-source-file (shell-lib-filename)))
+
+(define (lesskey-target-path)
+  "Where the shared pager keymap is installed: $XDG_CONFIG_HOME/lesskey, which
+is the first place less(1) looks for it."
+  (let* ((home (getenv "HOME"))
+         (xdg (getenv "XDG_CONFIG_HOME"))
+         (conf (if (and xdg (not (string-null? xdg)))
+                   xdg
+                   (format #f "~a/.config" home))))
+    (format #f "~a/lesskey" conf)))
 
 (define* (bash-config #:key (clone-dir (heks-bash-clone-dir)))
   (append '("# shellcheck shell=bash"
@@ -310,4 +329,11 @@ repository-relative path for setups that load compiled code."
       display-config-thunk)
     (with-output-to-file "bashrc.bash"
       display-config-thunk)
+    ;; The pager keymap lives outside the rc so less can read it directly.
+    (let ((target-lesskey (lesskey-target-path)))
+      (mkdir-p (dirname target-lesskey))
+      (with-output-to-file target-lesskey
+        (lambda ()
+          (set-port-encoding! (current-output-port) "UTF-8")
+          (display (read-source-file (lesskey-filename))))))
     (display "\nInstalled Bash configuration!")))
