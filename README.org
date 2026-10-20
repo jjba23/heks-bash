@@ -8,12 +8,14 @@
 The all-mighty magical /Witch Bourne Again Shell declarative configuration/, supporting integration with many handy CLI tooling and handy aliases, customization, exports, and functions  using Lisp (Guile Scheme).
 
 Modern Shell Experience ✨ with:
+  - *One prompt everywhere:* the same two-line prompt, palette and git segment as my other machines ([[https://codeberg.org/jjba23/cask-and-cons][cask-and-cons]] on macOS, [[https://codeberg.org/jjba23/wolk-jjba][wolk-jjba]] on the server), with a per-machine sigil, accent and badge so you can tell at a glance where you are.
+  - *Git at a glance:* branch, dirty/conflict counts, ahead/behind and stash count, from a single =git status --porcelain=v2 --branch= per prompt (≈4 ms, no plugins).
   - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
   - *Intelligent Completion:* Case-insensitive, spelling correction    (=cdspell=, =dirspell=), and auto-cd.
-  - Dynamic funny and customizable greetings
+  - *Dynamic funny and customizable greetings* plus =about=, =hist-top= and =rc-time=.
   - *History Management:* Large history size, timestamped entries, and    duplicate deduplication.
-  - *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=.
-  - *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation.
+  - *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=, plus ~[guix env]~, ~[nix]~ and ~[venv]~ badges in the prompt.
+  - *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation, plus small helpers (=mkcd=, =extract=, =serve=, =psg=, =kport=, =notify=, =ports=, =bak=, =calc=, =json=, =paths=, =ff=, =reload=).
 
   Heks is also best friends, this heks-bash is best used with the [[https://codeberg.org/jjba23/heks-linux][Heks GNU/Linux system]] but should be compatible across a large range of systems out of the box and minimal dependencies.
 
@@ -60,10 +62,12 @@ Create a script (e.g., =install-env.scm=) or run in your REPL:
 
 *Key Parameters:*
 
-- =bash-aliases=: Association list of command aliases.
+- =bash-identity=: Alist of the =CC_*= variables that make the prompt say who this machine is (=CC_FLAVOR=, =CC_HOST_KIND=, =CC_SIGIL=, =CC_ACCENT=, =CC_RC_FILE=).
+- =bash-aliases=: Association list of machine-specific aliases (the shared set lives in =shell-lib.bash=).
+- =bash-functions=: Association list of machine-specific functions.
 - =bash-vars=: Environment variables (colors, history settings).
-- =bash-exports=: Variables to be exported (e.g., =PS1=, =PATH=).
 - =heks-bash-clone-dir=: Location of the source repository.
+- =shell-lib-filename=: Name of the shared shell library that is spliced into the generated =.bashrc= (default =shell-lib.bash=).
 
 ** 🛠 Configuration Details
 
@@ -81,19 +85,55 @@ The module comes with sensible defaults for navigation and development:
 | =docker=    | =podman=              | Aliases Docker commands to Podman        |
 
 *** Custom Functions
-- =glog=: Decompresses a =.gz= log file and cats it to stdout.
-- =hgrep=: Greps through your command history.
 
-many more...
+The shared library (=src/heks-bash/shell-lib.bash=, spliced verbatim into
+=~/.bashrc=) provides, among others:
+
+| Function      | What it does                                                     |
+|---------------+------------------------------------------------------------------|
+| =about=       | print the machine identity, shell/git versions and prompt legend |
+| =hist-top=    | most used commands from the history file                         |
+| =rc-time=     | average startup cost of the shell, over N runs                   |
+| =hgrep=       | grep the command history                                         |
+| =gunlog=      | decompress a =.gz= log and page through it                       |
+| =mkcd=        | create a directory and cd into it                                |
+| =up N=        | go up N directories                                              |
+| =extract=     | unpack tar/tgz/txz/zst/zip/7z/rar/gz/bz2/xz in one verb           |
+| =serve [port]=| throwaway HTTP server in the current directory                   |
+| =psg=         | grep the process list without matching grep itself                |
+| =kport=       | kill whatever listens on a TCP port                              |
+| =ports=       | listening sockets (ss, or lsof where ss is absent)               |
+| =notify=      | desktop notification with a TTY fallback                         |
+| =bak=         | timestamped backup copy of a file                                |
+| =calc=        | quick floating point maths via awk                               |
+| =json=        | pretty-print JSON (python3 -m json.tool)                         |
+| =paths=       | the PATH, one entry per line, numbered                           |
+| =ff=          | find a file by name fragment                                     |
+| =cdroot=      | jump to the root of the current git work tree                    |
+| =reload=      | re-source the shell rc                                           |
+| =gst= =gd= =gds= =glog= =gco= =gsw= =gbr= =gcm= =gpl= =gpu= =gfetch= | terse git shortcuts and a graph log |
+
+Machine-specific extras (the =maak= aliases, =keys-show=, =tui-emacs=,
+=haskell-dev=, =scala-dev=, ...) are declared in =bash-aliases= and
+=bash-functions= in =bash.scm=.
 
 *** The Prompt
 
-The generated =PS1= prompt is minimal and functional (yes it also has a lambda λ), featuring:
+The prompt is rebuilt on every command by =__cc_prompt= from the shared
+library, and looks the same on every machine I run this config on:
 
-- *Bold User@Host*
-- *Current Working Directory*
-- *Guix Environment Indicator* (=[env]=) if active.
-- *Purple Greeting* (“Hallo, mens...”) on shell startup.
+#+begin_src shell
+╭─ joe@framew0rk λ guix/linux …/Hacking/heks-bash [guix env]
+╰─ main ✚2 ↑1↓3 ⚑1 λ
+#+end_src
+
+- *Line 1*: bold user@host, the machine badge (=λ guix/linux= here; =⌘ macos= on the Mac, =ω guix/server= on the server — sigil, badge and accent colour change per machine, the layout does not), the path trimmed to the last three components, and a badge for an active Guix shell, Nix shell or Python venv.
+- *Line 2*: the git segment — branch (or =@sha= when detached), =✚n= changed files, =✖n= conflicts, =✓= clean, =↑n=/=↓n= ahead/behind, =⚑n= stashes — then the sigil as the actual prompt.
+- =CC_PLAIN=1= (or =NO_COLOR=, or =TERM=dumb=) renders exactly the same prompt without colour.
+- A random greeting is printed once per interactive startup; =about= explains the rest.
+
+=git= is the only fork per prompt: the branch, upstream divergence and
+dirty state all come from one =git status --porcelain=v2 --branch=.
 
 
 ----------------
