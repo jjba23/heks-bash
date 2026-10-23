@@ -30,8 +30,6 @@ If you like my work, please support me by [[https://bmc.link/jjbigorra][buying m
 ---------------
 
 
-The project provides a sample compiled [[file:bashrc.bash][.bashrc file]] you can take and use.
-
 🐰 If you really want to go down the rabbit hole, then you  wanna use the Lisp code and programatically build the bashrc, then you need *GNU Guix and Guile* to compile the ~*.scm~ code to a Bash config. Optional Tools are:  =maak= , =fzf=, =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
 
 The project uses [[https://www.gnu.org/software/guile/manual/html_node/Parameters.html][Guile Parameters]] for configuration, allowing you to dynamically and lexically work with the config customization.

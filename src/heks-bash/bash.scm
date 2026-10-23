@@ -23,6 +23,8 @@
   #:export (install-bash bash-vars
                          bash-identity
                          shell-lib-filename
+                         notes-filename
+                         notes-directory
                          lesskey-filename
                          lesskey-target-path
                          read-source-file
@@ -53,6 +55,16 @@
 ;; into the generated bashrc instead of being quoted as Scheme strings.
 (define shell-lib-filename
   (make-parameter "shell-lib.bash"))
+
+;; The notes helpers: the `n' command (capture, find, todo, bookmarks,
+;; contacts, birthdays, index pages) for when Emacs is not at hand. Plain bash
+;; next to this module, spliced into the generated bashrc after the library.
+(define notes-filename
+  (make-parameter "notes.bash"))
+
+;; Where the notes are: the same directory the Emacs config points at.
+(define notes-directory
+  (make-parameter "$HOME/Hacking/private-notes"))
 
 ;; The pager keymap. Same idea: a plain data file next to this module, shared
 ;; verbatim with the other two machines, installed as $XDG_CONFIG_HOME/lesskey.
@@ -273,6 +285,10 @@ repository-relative path for setups that load compiled code."
   "Return the contents of the shared shell library as a string."
   (read-source-file (shell-lib-filename)))
 
+(define (read-notes-lib)
+  "Return the contents of the notes helpers as a string."
+  (read-source-file (notes-filename)))
+
 (define (lesskey-target-path)
   "Where the shared pager keymap is installed: $XDG_CONFIG_HOME/lesskey, which
 is the first place less(1) looks for it."
@@ -300,6 +316,11 @@ is the first place less(1) looks for it."
                (bash-vars))
           ;; the shared prompt engine and helper library
           (list "" (read-shell-lib) "")
+          ;; the notes: where they are, and the `n' command that works on them
+          (list "# ---- notes (the `n' command) ----"
+                (format #f "export NOTES_DIR=\"${NOTES_DIR:-~a}\"" (notes-directory))
+                (read-notes-lib)
+                "")
           (map serialize-bash-function
                (bash-functions))
           (map serialize-bash-alias
@@ -326,8 +347,6 @@ is the first place less(1) looks for it."
         (copy-file target-rc backup-rc)))
 
     (with-output-to-file target-rc
-      display-config-thunk)
-    (with-output-to-file "bashrc.bash"
       display-config-thunk)
     ;; The pager keymap lives outside the rc so less can read it directly.
     (let ((target-lesskey (lesskey-target-path)))
