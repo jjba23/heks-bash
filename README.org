@@ -12,7 +12,7 @@ Modern Shell Experience ✨ with:
   - *Git at a glance:* branch, dirty/conflict counts, ahead/behind and stash count, from a single =git status --porcelain=v2 --branch= per prompt (≈4 ms, no plugins).
   - *Integrations:* Modular support for    *[[https://github.com/akinomyoga/ble.sh][ble.sh]]* (Bash Line   Editor), *[[https://github.com/junegunn/fzf][fzf]]* (Fuzzy Finder),    and *[[https://direnv.net/][direnv]]*.
   - *Intelligent Completion:* Case-insensitive, spelling correction    (=cdspell=, =dirspell=), and auto-cd.
-  - *Dynamic funny and customizable greetings* plus =about=, =hist-top= and =rc-time=.
+  - *Dynamic funny and customizable greetings* (GNU, RMS, Emacs and Linux sayings, kept as Scheme data in =bash-greetings=) plus =about=, =hist-top= and =rc-time=.
   - *History Management:* Large history size, timestamped entries, and    duplicate deduplication.
   - *Guix & Nix Friendly:* Automatically handles paths for Guix profiles  and provides aliases for =nix develop=, plus ~[guix env]~, ~[nix]~ and ~[venv]~ badges in the prompt.
   - *Dev-Ready Aliases:* Includes shortcuts for =git=, =docker=, =podman=,  =emacs=, and file navigation, plus small helpers (=mkcd=, =extract=, =serve=, =psg=, =kport=, =notify=, =ports=, =bak=, =calc=, =json=, =paths=, =ff=, =reload=).
