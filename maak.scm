@@ -38,7 +38,7 @@
 (define (install-bash)
   "Install the Bash configuration and completions heks-bash ships."
   (time-machine-manifest-shell
-   (list "guile -L ./src -c" "'((@(heks-bash bash) install-bash))'")
+   (list "guile" "-L" "./src" "-c" "'((@(heks-bash bash) install-bash))'")
    #:verbose? #t))
 
 (define (install-ble-sh)
@@ -48,11 +48,12 @@ The upstream tree is cloned shallow with its submodules -- ble.sh vendors its
 own completion packages that way -- and `make install' is pointed at ~/.local,
 so nothing outside the home directory is touched."
   (let ((source "/tmp/ble.sh")
-        (prefix (format #f "PREFIX=~a/.local" (getenv "HOME"))))
+        (prefix (~ "~a/.local" (home-dir))))
     (delete-file-recursively source)
-    (run (list "git" "clone" "--recursive" "--depth" "1"
-               "--shallow-submodules"
+    ;; `git-clone' models `--branch', `--depth' and `--bare'; the submodule and
+    ;; shallow-submodule flags are passed through the escape hatch instead.
+    (git (list "clone" "--recursive" "--depth" "1" "--shallow-submodules"
                "https://github.com/akinomyoga/ble.sh.git" source)
          #:verbose? #t)
-    (run (list "make" "-C" source "install" prefix)
+    (run (list "make" "-C" source "install" (~ "PREFIX=~a" prefix))
          #:verbose? #t)))
