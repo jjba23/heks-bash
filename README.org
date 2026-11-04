@@ -5,6 +5,9 @@
 
 [[https://jointhefreeworld.org/ggg/dist/shell-bash.svg]] [[https://jointhefreeworld.org/ggg/dist/scheme-guile.svg]]  [[https://jointhefreeworld.org/ggg/dist/maak.svg]]  [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]]    [[https://jointhefreeworld.org/ggg/dist/license-fdl13+.svg]] [[https://jointhefreeworld.org/ggg/dist/gnu-guix.svg]]
 
+#+attr_html: :width 160 :alt Heks BASH logo
+[[file:logo.svg]]
+
 The all-mighty magical /Witch Bourne Again Shell declarative configuration/, supporting integration with many handy CLI tooling and handy aliases, customization, exports, and functions  using Lisp (Guile Scheme).
 
 Modern Shell Experience ✨ with:
@@ -29,19 +32,15 @@ If you like my work, please support me by [[https://bmc.link/jjbigorra][buying m
 
 ---------------
 
-
 🐰 If you really want to go down the rabbit hole, then you  wanna use the Lisp code and programatically build the bashrc, then you need *GNU Guix and Guile* to compile the ~*.scm~ code to a Bash config. Optional Tools are:  =maak= , =fzf=, =direnv=, =fastfetch=, =nix=, =guix= =emacs=, =podman=.
 
 The project uses [[https://www.gnu.org/software/guile/manual/html_node/Parameters.html][Guile Parameters]] for configuration, allowing you to dynamically and lexically work with the config customization.
 
 As for the ~EDITOR~ variable, heks-bash uses a custom script to intelligently determine which kind of Emacs to run (GUI or CLI)
 
-
 ------------------
 
-
 [[https://jointhefreeworld.org/static-assets/heks/screen-2026-07-15-23-05-24.png]]
-
 
 --------------------------
 
@@ -53,8 +52,6 @@ Create a script (e.g., =install-env.scm=) or run in your REPL:
 ;; Generates and writes configuration to ~/.bashrc
 (install-bash)
 #+end_src
-
-
 
 -----------
 
@@ -172,7 +169,6 @@ lives.
 The keymap file is byte-identical with
 =cask-and-cons/src/cask-and-cons/lesskey= and
 =wolk-jjba/home/bash/lesskey=.
-
 
 ----------------
 
