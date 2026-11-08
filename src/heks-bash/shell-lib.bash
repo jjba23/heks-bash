@@ -1,12 +1,33 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # palette values are consumed indirectly (${!name})
 # =============================================================================
-# Shared shell library — heks-bash (this file) · wolk-jjba (inline in bashrc.sh)
-# Also mirrored for zsh in cask-and-cons/src/cask-and-cons/shell-lib.zsh.
+# heks-bash
 #
-# Keep the bash copy byte-identical between heks-bash and wolk-jjba so the two
-# machines feel like one system. Everything machine-specific comes from the
-# CC_* variables below, which the host config sets *before* calling `cc_boot':
+# Copyright (c) 2025-2026 Josep Bigorra <jjbigorra@gmail.com>
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# =============================================================================
+# Shared shell library — heks-bash (this file)
+#
+# Everything machine-specific comes from the CC_* variables below, which the
+# host config sets *before* calling `cc_boot':
 #
 #   CC_FLAVOR     name of the config, e.g. heks-bash
 #   CC_HOST_KIND  at-a-glance machine kind, e.g. guix/linux

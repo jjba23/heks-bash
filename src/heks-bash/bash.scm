@@ -59,9 +59,8 @@
   (make-parameter "~/.local/share/blesh"))
 
 ;; The procedural half of the config (prompt engine, git segment, helper
-;; functions, greeting pool) lives in a plain shell file so it can stay
-;; byte-identical with the other machines the config runs on. It is spliced
-;; into the generated bashrc instead of being quoted as Scheme strings.
+;; functions, greeting pool) lives in a plain shell file, spliced into the
+;; generated bashrc instead of being quoted as Scheme strings.
 (define shell-lib-filename
   (make-parameter "shell-lib.bash"))
 

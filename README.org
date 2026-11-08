@@ -3,7 +3,7 @@
 #+author: Josep Bigorra
 #+email: jjbigorra@gmail.com
 
-[[https://jointhefreeworld.org/ggg/dist/shell-bash.svg]] [[https://jointhefreeworld.org/ggg/dist/scheme-guile.svg]]  [[https://jointhefreeworld.org/ggg/dist/maak.svg]]  [[https://jointhefreeworld.org/ggg/dist/license-mit.svg]]    [[https://jointhefreeworld.org/ggg/dist/license-fdl13+.svg]] [[https://jointhefreeworld.org/ggg/dist/gnu-guix.svg]]
+[[https://jointhefreeworld.org/ggg/dist/shell-bash.svg]] [[https://jointhefreeworld.org/ggg/dist/scheme-guile.svg]]  [[https://jointhefreeworld.org/ggg/dist/maak.svg]]  [[https://jointhefreeworld.org/ggg/dist/license-mit.svg]]  [[https://jointhefreeworld.org/ggg/dist/gnu-guix.svg]]
 
 #+attr_html: :width 160 :alt Heks BASH logo
 [[file:logo.svg]]
@@ -166,10 +166,6 @@ lives.
 =C-s= is also a working forward-search in readline because =cc_boot= runs
 =stty -ixon= on interactive ttys (no more frozen terminal on =C-s=).
 
-The keymap file is byte-identical with
-=cask-and-cons/src/cask-and-cons/lesskey= and
-=wolk-jjba/home/bash/lesskey=.
-
 ----------------
 
 ** Ble.sh
@@ -213,3 +209,11 @@ A build should never fail because "it worked on my machine." Reliable software d
 - *Time Travel:* Rebuild the exact system state from any point in git history using ~guix time-machine~.
 - *Atomic Operations:* Instantly upgrade or roll back environments without leaving orphaned dependencies or broken states.
 - *Unified Tooling:* One tool manages development shells, isolated containers, package builds, and full system configurations.
+
+--------
+
+* License
+
+heks-bash is released under the [[file:LICENSE][MIT license]]. The full text is in
+=LICENSE= at the root of the repository, and every source file carries the same
+terms and an =SPDX-License-Identifier: MIT= tag in its header.
