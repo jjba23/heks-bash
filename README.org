@@ -107,6 +107,7 @@ The shared library (=src/heks-bash/shell-lib.bash=, spliced verbatim into
 | =paths=       | the PATH, one entry per line, numbered                           |
 | =ff=          | find a file by name fragment                                     |
 | =cdroot=      | jump to the root of the current git work tree                    |
+| =ai [args]=   | the ECA chat in the terminal, workspace set to the project root   |
 | =reload=      | re-source the shell rc                                           |
 | =gst= =gd= =gds= =glog= =gco= =gsw= =gbr= =gcm= =gpl= =gpu= =gfetch= | terse git shortcuts and a graph log |
 

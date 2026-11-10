@@ -472,6 +472,21 @@ cdroot () {
     return 1
 }
 
+# The ECA chat (`eca-cli', installed by heks-linux) with the workspace set to
+# the project this shell is in, so it starts from any subdirectory. Everything
+# after `ai' is passed through: `ai -p "..."' prints one answer and exits, `ai
+# -c' continues the workspace's last chat.
+ai () {
+    if ! __cc_has eca-cli
+    then
+        printf 'ai: eca-cli is not on PATH (cd ~/Hacking/heks-linux && maak install-eca)\n' >&2
+        return 127
+    fi
+    local root
+    root=$(git rev-parse --show-toplevel 2> /dev/null) || root=$PWD
+    command eca-cli --workspace "$root" "$@"
+}
+
 ff () {
     if [[ -z ${1:-} ]]
     then
