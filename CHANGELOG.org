@@ -1,0 +1,96 @@
+#+title: heks-bash release notes
+#+author: Josep Bigorra
+#+email: jjbigorra@gmail.com
+
+This file records what each release changed and what it breaks, newest first.
+It is history, not a plan: the guide says what the configuration does, this says
+when it started doing it.  The version it describes lives in =bash.scm= as
+=heks-bash-version= and reaches the generated file, =about= and the tag.
+
+* Unreleased
+
+Nothing yet.
+
+* 2.2.0 - 2026-11-18
+
+The release where the generated files became testable, and where more of the
+configuration moved from Bash into Scheme.
+
+** The generated file is tested
+
+- =maak check= is the new gate.  It runs the Guile suite
+  (=test/heks-bash.scm=) inside the pinned toolchain, runs =shellcheck= over
+  the two shell libraries and the rendered rc, and fails on either.
+- The suite has two halves.  One asserts the rendered file as data: rendering
+  twice gives the same bytes, the version and identity reached the output, every
+  alias and greeting was serialised, and the checked-in pager keymap equals its
+  rendering.  The other sources the rc in a synthetic =HOME= - the real
+  =~/.bashrc= is never touched - and asks a shell: =about= answers, =tools=
+  lists the dependencies, =pager-keys= prints the map, =n help= works, a bash
+  with =complete= and =bind= disabled stays silent, and nothing at all reaches
+  standard error.
+- Startup cost is a test: the median of five runs against a budget, currently
+  ~20 ms against 700 ms of headroom.
+- The first thing that suite found was real: =bind "set ..."= printed "line
+  editing not enabled" whenever the rc was sourced by a non-interactive shell.
+  The readline bindings now only run where readline listens.
+
+** More of the configuration is data in Scheme
+
+- =bash-pager-keymap= describes the pager keymap once, as =(label (key .
+  action) ...)= per lesskey section.  Two renderings come out of it: the
+  =lesskey= file =less= reads and the =pager-keys= table.  =lesskey= is now a
+  rendering and is still committed, because the sibling repositories carry it;
+  =maak render= refreshes it and a test fails when the two disagree.
+- =bash-tools= is the one table naming the runtime dependencies - name, probe,
+  what it is for, how to install it.  The new =tools= function reports it with
+  a present/missing column, and =ai= takes its =eca-cli= install hint from the
+  same row instead of spelling it out again.
+- =bash-path-prepends= exports a directory only when it exists, so a machine
+  without a Guix profile no longer gets dead =PATH= entries.
+- =heks-bash-version=: one version string, rendered as =CC_VERSION=, printed by
+  the file header and by =about=.
+
+** Rendering and printing
+
+- =install-bash= takes =#:target=, so a test or a reviewer can render into a
+  temporary home instead of the real one, and =display-bash=,
+  =write-bash-config= and =write-lesskey= are the entry points the tests use.
+- =maak render= writes =bashrc.bash= (gitignored) and refreshes
+  =src/heks-bash/lesskey=.
+
+** ble.sh is pinned
+
+- =install-ble-sh= fetches the commit in =ble-sh-commit= - version
+  =ble-sh-version=, =0.4.0-devel4+95ae551= - instead of cloning whatever the
+  branch holds, checks the commit out, updates the vendored submodules from it
+  and rebuilds.  =ble-update= still works and takes the pin away; re-running the
+  task puts it back.  This is the reproducibility the rest of the project
+  already had.
+
+** shellcheck
+
+- =shellcheck= runs as part of =maak check=.  Two real findings were fixed -
+  =kport= killed a word-split string and now kills an array of pids, and the
+  notes' =__n_topic_name= reused a variable name an array had claimed - and the
+  rest are disabled by code in [[file:.shellcheckrc][.shellcheckrc]] with the
+  reason written next to them.
+
+** Breaking
+
+- =serialize-bash-path-prepend= now emits a test as well as an export.  A caller
+  that concatenated its output into a line of its own still works; one that
+  assumed a bare =export= now sees an =[[ -d ... ]] &&= in front of it.
+- The =lesskey= file's content changed shape: it is generated, with the bindings
+  grouped under comments, so a copy in another repository is stale until
+  replaced.  The bindings themselves are the same 41.
+
+* 2.1.3 - 2026-11-13
+
+- A =VISION= document, describing where the boundary between Scheme and Bash
+  should move next.
+
+* 2.1.2 - 2026-11-12
+
+- A =FUNDING.yml= for the sponsor button.
+- =ai= runs the ECA chat with the workspace set to the project root.

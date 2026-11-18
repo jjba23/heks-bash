@@ -24,7 +24,13 @@ Modern Shell Experience ✨ with:
 
 The project is written mostly in Lisp  and Bash (shell script).
 
-This project uses [[https://codeberg.org/jjba23/maak][Maak, the infinitely extensible command-runner]] as automation system.
+This is =heks-bash 2.2.0=.  What changed, and what breaks, is in
+[[file:CHANGELOG.org][CHANGELOG.org]].
+
+This project uses [[https://codeberg.org/jjba23/maak][Maak, the infinitely extensible command-runner]] as automation system.  Four tasks matter: ~maak install-bash~ writes the
+configuration, ~maak install-ble-sh~ installs the pinned line editor,
+~maak render~ refreshes the files that are checked in, and ~maak check~ is what
+must be green.
 
 This config uses [[https://github.com/akinomyoga/ble.sh][ble.sh]] and to install it you should check out the ~maak.scm~ file, or their GitHub.
 
@@ -58,12 +64,18 @@ Create a script (e.g., =install-env.scm=) or run in your REPL:
 *Key Parameters:*
 
 - =bash-identity=: Alist of the =CC_*= variables that make the prompt say who this machine is (=CC_FLAVOR=, =CC_HOST_KIND=, =CC_SIGIL=, =CC_ACCENT=, =CC_RC_FILE=).
+- =heks-bash-version=: The version string, rendered as =CC_VERSION= and printed by =about= and the file's header.
 - =bash-aliases=: Association list of machine-specific aliases (the shared set lives in =shell-lib.bash=).
 - =bash-functions=: Association list of machine-specific functions.
 - =bash-vars=: Environment variables (colors, history settings).
+- =bash-pager-keymap=: The less(1) keymap as data, =((command (label (key . action) ...) ...) (line-edit ...))=; it renders both the =lesskey= file and the =pager-keys= table.
+- =bash-tools=: The runtime dependencies as data, =(name probe kind purpose hint)=; =tools= reports it and =ai= takes its install hint from it.
+- =bash-greetings=: The pool of sayings, one printed per interactive startup.
+- =bash-path-prepends=: Directories put in front of =PATH=; each is exported only when the directory exists.
 - =heks-bash-clone-dir=: Location of the source repository.
+- =ble-sh-commit=, =ble-sh-version=: The ble.sh pin - the commit =install-ble-sh= fetches and rebuilds.
 - =shell-lib-filename=: Name of the shared shell library that is spliced into the generated =.bashrc= (default =shell-lib.bash=).
-- =lesskey-filename=: Name of the shared pager keymap, installed as =$XDG_CONFIG_HOME/lesskey= (default =lesskey=).
+- =lesskey-filename=: Name of the checked-in rendering of the pager keymap, installed as =$XDG_CONFIG_HOME/lesskey= (default =lesskey=).
 
 ** 🛠 Configuration Details
 
@@ -109,6 +121,7 @@ The shared library (=src/heks-bash/shell-lib.bash=, spliced verbatim into
 | =cdroot=      | jump to the root of the current git work tree                    |
 | =ai [args]=   | the ECA chat in the terminal, workspace set to the project root   |
 | =reload=      | re-source the shell rc                                           |
+| =tools=       | the runtime dependencies: present or missing, and how to get one |
 | =gst= =gd= =gds= =glog= =gco= =gsw= =gbr= =gcm= =gpl= =gpu= =gfetch= | terse git shortcuts and a graph log |
 
 Machine-specific extras (the =maak= aliases, =keys-show=, =tui-emacs=,
@@ -137,11 +150,13 @@ dirty state all come from one =git status --porcelain=v2 --branch=.
 
 The pager is plain =less=, everywhere and with the same keys: =PAGER= and
 =MANPAGER= are set to =less=, =LESS= is =-F -I -M -R= (quit if the output
-fits on one screen, case-insensitive search, the long prompt, colour), and
-=src/heks-bash/lesskey= gives it Emacs key bindings. =install-bash= copies
-that file to =$XDG_CONFIG_HOME/lesskey=, which is the first place =less=
-582 and later look; no =lesskey= compile step is involved, and older =less=
-versions just keep their default keys.
+fits on one screen, case-insensitive search, the long prompt, colour), and the
+map below gives it Emacs key bindings.  The map is data - =bash-pager-keymap=
+in =bash.scm= - and two things are rendered from it: the =lesskey= file
+=install-bash= writes to =$XDG_CONFIG_HOME/lesskey= (the first place =less=
+582 and later look, so no compile step and older =less= just keeps its own
+keys) and the =pager-keys= table.  Adding a binding means adding a row, and the
+file, the help and the pager cannot disagree afterwards.
 
 | Key          | What it does                                   |
 |--------------+------------------------------------------------|
@@ -169,14 +184,63 @@ lives.
 
 ----------------
 
+** Rendering, testing and the version
+
+The generated files are renderings of parameters, which is what makes them
+testable.  ~maak render~ writes =bashrc.bash= (gitignored, or the path given as
+an argument) and refreshes =src/heks-bash/lesskey=, the checked-in rendering
+the sibling repositories carry.  ~maak check~ is the gate:
+
+- ~guile -L ./src test/heks-bash.scm~, inside the pinned toolchain.  Half of it
+  is about the file as data - two renders are identical, every alias and
+  greeting reached the output, the checked-in keymap equals its rendering - and
+  the other half sources the rc in a synthetic =HOME= and asks the shell:
+  =about= answers, =tools= lists the dependencies, =pager-keys= prints the map,
+  =n help= works, a bash with the completion builtins disabled stays quiet, and
+  nothing writes to standard error.
+- =shellcheck= over =shell-lib.bash=, =notes.bash= and the rendered rc, with
+  the decisions in [[file:.shellcheckrc][.shellcheckrc]]: a finding is fixed, or it
+  is disabled by code with the reason beside it.
+- the median startup cost, over five runs, against a budget in the test file -
+  a number, so that putting a fork in the prompt is a failing test and not a
+  feeling.
+
+=heks-bash-version= is the one version string: it reaches the rendered header,
+=CC_VERSION=, =about=, this page and the release notes.
+
+----------------
+
 ** Ble.sh
 
-You can update  ble.sh with ~ble-update~
+ble.sh is pinned: =install-ble-sh= fetches one commit
+(=ble-sh-commit=, version =ble-sh-version=, both in =bash.scm=) with its
+vendored submodules, checks it out and rebuilds it - =make install
+PREFIX=~/.local= - so nothing outside the home directory is touched and two
+machines installed months apart run the same line editor.  =ble-update= still
+works; it just takes the pin away, and re-running ~maak install-ble-sh~ puts it
+back.
 
 ble.sh, the =bind= lines and bash-completion all need a bash built with
 readline and programmable completion.  The generated rc asks once
 (=CC_COMPLETIONS=) and skips that whole layer in a bash without them, such as
 the one Nix ships, instead of printing an error per line.
+
+----------------
+
+** Runtime dependencies and portability
+
+=tools= is the one place that names what this configuration leans on - =git=,
+=less=, =fzf=, =direnv=, =delta=, =ble.sh=, =eca-cli=, =guix=, =nix=,
+=python3= - and it says, for each, whether it is there, what it is for, and the
+command that installs it.  The table is =bash-tools= in =bash.scm=.  Nothing
+in the table is required: each tool is probed where it is used, and its absence
+costs its feature and nothing else.
+
+The Guix assumptions are the same kind.  =bash-path-prepends= adds a directory
+only when it exists, so a machine without a Guix profile gets no dead =PATH=
+entries; the =[guix env]=, =[nix]= and =[venv]= badges appear only inside those
+environments; =eca-cli=, =fzf= and =direnv= are probed before use.  Guix is
+needed to *build* this configuration, not to run it.
 
 ----------------------
 
