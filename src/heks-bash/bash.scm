@@ -28,11 +28,20 @@
   #:use-module (ice-9 textual-ports)
   #:export (install-bash bash-vars
                          bash-identity
+                         heks-bash-version
+                         ble-sh-version
+                         ble-sh-commit
+                         ble-sh-repository
                          shell-lib-filename
                          notes-filename
                          notes-directory
                          lesskey-filename
                          lesskey-target-path
+                         bash-pager-keymap
+                         serialize-lesskey
+                         serialize-bash-pager-keys
+                         bash-tools
+                         serialize-bash-tools
                          read-source-file
                          serialize-bash-assignment
                          bash-path-prepends
@@ -48,15 +57,31 @@
                          serialize-bash-path-prepend
                          serialize-bash-function
                          bash-config
+                         display-bash
+                         write-bash-config
+                         write-lesskey
+                         write-rendered
                          heks-bash-clone-dir))
 
 ;; Parameters
+(define heks-bash-version
+  (make-parameter "2.2.0"))
 (define heks-bash-clone-dir
   (make-parameter "~/Hacking/heks-bash"))
 (define heks-linux-clone-dir
   (make-parameter "~/Hacking/heks-linux"))
 (define heks-bash-ble-sh-dir
   (make-parameter "~/.local/share/blesh"))
+
+;; ble.sh builds itself and moves with `ble-update', so the installer pins it
+;; instead: one commit, fetched and rebuilt, so two machines that ran
+;; `install-ble-sh' on different days still run the same line editor.
+(define ble-sh-version
+  (make-parameter "0.4.0-devel4+95ae551"))
+(define ble-sh-commit
+  (make-parameter "95ae551dd687a0c61227839dda43f52ac7ea6631"))
+(define ble-sh-repository
+  (make-parameter "https://github.com/akinomyoga/ble.sh.git"))
 
 ;; The procedural half of the config (prompt engine, git segment, helper
 ;; functions, greeting pool) lives in a plain shell file, spliced into the
@@ -74,8 +99,9 @@
 (define notes-directory
   (make-parameter "$HOME/Hacking/private-notes"))
 
-;; The pager keymap. Same idea: a plain data file next to this module, shared
-;; verbatim with the other two machines, installed as $XDG_CONFIG_HOME/lesskey.
+;; The pager keymap.  The source is `bash-pager-keymap' above; this is the
+;; rendering of it that is checked in, because the two sibling repositories
+;; consume the same file.  A test diffs the two, so they cannot drift.
 (define lesskey-filename
   (make-parameter "lesskey"))
 
@@ -100,13 +126,15 @@
         "else"
         "    CC_COMPLETIONS=0"
         "fi"
-        "if [[ $CC_COMPLETIONS == 1 ]]; then"
+        "if [[ $CC_COMPLETIONS == 1 && $- == *i* ]]; then"
         "    # shellcheck source=/dev/null"
-        (string-append "    [[ $- == *i* && -r "
+        (string-append "    [[ -r "
                        (format #f "~a/ble.sh"
                                (heks-bash-ble-sh-dir)) " ]] && source -- "
                        (format #f "~a/ble.sh"
                                (heks-bash-ble-sh-dir)) " || true")
+        "    # readline only listens in an interactive shell, and says so on"
+        "    # stderr in one that is not."
         "    bind \"set completion-ignore-case on\""
         "    bind \"set completion-map-case on\""
         "    bind \"set show-all-if-ambiguous on\""
@@ -287,6 +315,182 @@ fi
      "chmod +x your life."
      "Talk is cheap. Show me the code.")))
 
+;; The pager keymap, as data.  Each section is (NAME (LABEL (KEY . ACTION) ...)):
+;; here are the lesskey(1) sections, here is what each group of keys is for, and
+;; here are the bindings that implement it.  Two renderings come out of this
+;; one list - the `lesskey' file less(1) reads and the table `pager-keys'
+;; prints - so the map a person reads and the map the pager obeys cannot drift.
+;;
+;; A KEY is written the way lesskey(1) writes it (`^N', `\ev'); the help table
+;; spells the same key the way a terminal user reads it (`C-n', `M-v').
+(define bash-pager-keymap
+  (make-parameter
+   '((command
+      ("one line down / up"
+       ("^N" . "forw-line")
+       ("^P" . "back-line"))
+      ("one screen down / up"
+       ("^F" . "forw-screen")
+       ("^B" . "back-screen")
+       ("^V" . "forw-screen")
+       ("\\ev" . "back-screen"))
+      ("half a screen down / up"
+       ("^D" . "forw-scroll")
+       ("^U" . "back-scroll"))
+      ("RET scrolls a line too"
+       ("\\r" . "forw-line")
+       ("\\n" . "forw-line"))
+      ("top / bottom of the file"
+       ("^A" . "goto-line 1\\rk")
+       ("\\e<" . "goto-line 1\\rk")
+       ("^E" . "goto-end")
+       ("\\e>" . "goto-end"))
+      ("go to a line"
+       ("\\eg" . "goto-line"))
+      ("redraw the screen"
+       ("^L" . "repaint"))
+      ("search forward / backward"
+       ("^S" . "forw-search")
+       ("^R" . "back-search"))
+      ("clear the search highlighting"
+       ("\\eU" . "clear-search"))
+      ("the status line"
+       ("^G" . "status")))
+     (line-edit
+      ("beginning / end of the line"
+       ("^A" . "home")
+       ("^E" . "end")
+       ("\\e0" . "home")
+       ("\\e$" . "end"))
+      ("one character left / right"
+       ("^B" . "left")
+       ("^F" . "right")
+       ("\\eh" . "left")
+       ("\\el" . "right"))
+      ("one word left / right"
+       ("\\eb" . "word-left")
+       ("\\ef" . "word-right"))
+      ("kill the word before the cursor"
+       ("^W" . "word-backspace")
+       ("\\kB" . "word-backspace")
+       ("\\e\\kb" . "word-backspace"))
+      ("delete / kill"
+       ("^D" . "delete")
+       ("\\ed" . "word-delete")
+       ("^K" . "kill-line")
+       ("^U" . "kill-line"))
+      ("previous / next line"
+       ("^P" . "up")
+       ("^N" . "down"))
+      ("cancel the prompt"
+       ("^G" . "abort"))
+      ("complete a file name"
+       ("\\e\\t" . "back-complete"))))))
+
+;; The runtime dependencies, as data: name, what to look for, how to look for
+;; it, what the tool is for and how to get it.  `tools' reports the table with
+;; a present/missing column, and the `ai' helper takes its install hint from
+;; here, so "this is missing, here is the command" is written once.
+(define bash-tools
+  (make-parameter
+   '(("git" "git" "command" "the prompt's git segment, the shortcuts and the diff colour" "")
+     ("less" "less" "command" "the pager, with the keymap installed as lesskey" "install less")
+     ("fzf" "fzf" "command" "the notes pickers and fzf's own key bindings" "install fzf")
+     ("direnv" "direnv" "command" "per-directory environments" "install direnv")
+     ("delta" "delta" "command" "colourised git diffs" "install git-delta")
+     ("ble.sh" "~/.local/share/blesh/ble.sh" "file" "syntax highlighting, autosuggestion, the completion menu" "maak install-ble-sh")
+     ("eca-cli" "eca-cli" "command" "the `ai' chat, with the workspace set to the project root" "cd ~/Hacking/heks-linux && maak install-eca")
+     ("guix" "guix" "command" "the build toolchain and the guix shell badge" "install Guix")
+     ("nix" "nix" "command" "the nix develop shortcuts and the nix shell badge" "install Nix")
+     ("python3" "python3" "command" "the json helper and serve's HTTP server" "install python3"))))
+
+(define (lesskey-key->display key)
+  "Return lesskey's @var{key} - @code{^N}, @code{\\ev} - as @code{C-n},
+@code{M-v}: the same key, written for a person reading the help table."
+  (cond ((string-prefix? "^" key)
+         (string-append "C-" (string-downcase (substring key 1))))
+        ((member key '("\\r" "\\n")) "RET")
+        ((string=? key "\\e\\t") "M-TAB")
+        ((string=? key "\\e\\kb") "M-BS")
+        ((member key '("\\kb" "\\kB")) "C-BS")
+        ((string-prefix? "\\e" key)
+         (string-append "M-" (string-downcase (substring key 2))))
+        (else key)))
+
+(define (serialize-lesskey)
+  "Render @code{bash-pager-keymap} as a lesskey(1) source file."
+  (string-append
+   "# ====== pager keymap ======
+#
+# Generated from bash-pager-keymap in bash.scm: edit the Scheme list, not this
+# file.  Installed as $XDG_CONFIG_HOME/lesskey, which less(1) 582 and later
+# read directly, so there is no `lesskey' compile step and no binary to keep in
+# sync.  Everything not listed here keeps its default less binding (j k space b
+# g G / ? n N m ' ! | :x q ...), so both muscle memories work.
+"
+   (string-join
+    (map (lambda (section)
+           (string-append
+            (format #f "~%#~a~%" (car section))
+            (string-join
+             (map (lambda (row)
+                    (format #f "~a~a~%"
+                            (format #f "# ~a~%" (car row))
+                            (string-join
+                             (map (lambda (binding)
+                                    (format #f "~a ~a"
+                                            (car binding)
+                                            (cdr binding)))
+                                  (cdr row))
+                             "\n")))
+                  (cdr section))
+             "\n")))
+         (bash-pager-keymap))
+    "")))
+
+(define (serialize-bash-pager-keys)
+  "Render @code{bash-pager-keymap} as the arrays @code{pager-keys} prints."
+  (string-append
+   (string-join
+    (map (lambda (section)
+           (format #f "CC_PAGER_KEYS_~a=(\n~a)\n"
+                   (string-upcase
+                    (string-map (lambda (c)
+                                  (if (char=? c #\-) #\_ c))
+                                (symbol->string (car section))))
+                   (string-join
+                    (map (lambda (row)
+                           (format #f "\t\"~a\""
+                                   (shell-double-quote
+                                    (format #f "~a\t~a"
+                                            (car row)
+                                            (string-join
+                                             (map (lambda (binding)
+                                                    (lesskey-key->display
+                                                     (car binding)))
+                                                  (cdr row))
+                                             ", ")))))
+                         (cdr section))
+                    "\n")))
+         (bash-pager-keymap))
+    "\n")
+   "\n"))
+
+(define (serialize-bash-tools)
+  "Render @code{bash-tools} as the array @code{tools} reports from.
+Every field is written for a double-quoted shell string, so an apostrophe in a
+description stays a character and a backtick - `ai', say - does not start a
+command substitution in the rc."
+  (string-append
+   "CC_TOOLS=(\n"
+   (string-join
+    (map (lambda (tool)
+           (format #f "\t\"~a\""
+                   (shell-double-quote (string-join tool "\t"))))
+         (bash-tools))
+    "\n")
+   "\n)\n"))
+
 (define (shell-double-quote s)
   "Return @var{s} escaped for use inside a double-quoted shell string."
   (string-concatenate
@@ -382,7 +586,10 @@ fi
           (cdr v)))
 
 (define (serialize-bash-path-prepend p)
-  (format #f "export PATH=\"~a:$PATH\"\n" p))
+  ;; A directory that is not there is a dead PATH entry, and on a machine
+  ;; without a Guix profile that is exactly what these paths are; the test runs
+  ;; before the export so the entry only exists when it can resolve something.
+  (format #f "[[ -d \"~a\" ]] && export PATH=\"~a:$PATH\"\n" p p))
 
 (define (serialize-bash-function f)
   (format #f "~a () {\n\t~a\n}\n\n"
@@ -436,23 +643,32 @@ is the first place less(1) looks for it."
     (format #f "~a/lesskey" conf)))
 
 (define* (bash-config #:key (clone-dir (heks-bash-clone-dir)))
-  (append '("# shellcheck shell=bash"
-            "# shellcheck disable=SC1090  # include() sources rc fragments by path"
-            "# shellcheck disable=SC2155  # the tput colour exports are intentional"
-            "# shellcheck disable=SC2034  # palette values are consumed indirectly"
-            "# ====== HEKS-BASH configuration ======"
-            "# auto-generated file! Regenerate with `maak install-bash'."
-            "# Sources of truth: src/heks-bash/bash.scm (machine data)"
-            "# and src/heks-bash/shell-lib.bash (shared prompt + helpers).\n")
-          ;; machine identity read by the shared library
+  (append (list "# shellcheck shell=bash"
+                "# shellcheck disable=SC1090  # include() sources rc fragments by path"
+                "# shellcheck disable=SC2155  # the tput colour exports are intentional"
+                "# shellcheck disable=SC2034  # palette values are consumed indirectly"
+                (format #f "# ====== HEKS-BASH ~a configuration ======"
+                        (heks-bash-version))
+                "# auto-generated file! Regenerate with `maak install-bash'."
+                "# Sources of truth: src/heks-bash/bash.scm (machine data)"
+                "# and src/heks-bash/shell-lib.bash (shared prompt + helpers).\n")
+          ;; version and machine identity, read by the shared library
           (list (string-join (map serialize-bash-assignment
-                                  (bash-identity)) "\n") "")
+                                  (append (list (cons "CC_VERSION"
+                                                      (heks-bash-version)))
+                                          (bash-identity)))
+                             "\n")
+                "")
           (list (string-join (bash-prelude) "\n") "\n")
           (map serialize-bash-var
                (bash-vars))
+          ;; data the shared library reads: the greeting pool, the pager keymap
+          ;; and the dependency table, all declared above in Scheme
+          (list "" (serialize-bash-greetings))
+          (list (serialize-bash-pager-keys))
+          (list (serialize-bash-tools))
           ;; the shared prompt engine and helper library
           (list "" (read-shell-lib) "")
-          (list (serialize-bash-greetings))
           (map serialize-bash-function
                bash-git-shortcuts)
           ;; the notes: where they are, and the `n' command that works on them
@@ -471,13 +687,41 @@ is the first place less(1) looks for it."
                     (bash-path-prepends)))
           (list "" (string-join (bash-postlude) "\n") "" "cc_boot")))
 
-(define (install-bash)
-  (let* ((target-rc (format #f "~a/.bashrc"
-                            (getenv "HOME")))
-         (display-config-thunk (lambda ()
-                                 (set-port-encoding! (current-output-port)
-                                                     "UTF-8")
-                                 (display (string-join (bash-config) "\n")))))
+(define* (display-bash #:key (clone-dir (heks-bash-clone-dir)))
+  "Write the rendered Bash configuration to the current output port and
+return nothing.  Rendering is a pure function of the parameters, so this is
+what a golden file and a diff are made of."
+  (set-port-encoding! (current-output-port) "UTF-8")
+  (display (string-join (bash-config #:clone-dir clone-dir) "\n")))
+
+(define (write-rendered path text)
+  "Write @var{text} to @var{path} as UTF-8 and return @var{path}."
+  (let ((port (open-output-file path)))
+    (dynamic-wind
+      (lambda () #t)
+      (lambda ()
+        (set-port-encoding! port "UTF-8")
+        (display text port))
+      (lambda () (close-port port))))
+  path)
+
+(define* (write-bash-config path #:key (clone-dir (heks-bash-clone-dir)))
+  "Render the configuration into @var{path} and return @var{path}.
+This creates that one file and nothing else: @code{install-bash} is the entry
+point that also installs the pager keymap."
+  (write-rendered path (string-join (bash-config #:clone-dir clone-dir) "\n")))
+
+(define (write-lesskey path)
+  "Render the pager keymap into @var{path} and return @var{path}."
+  (write-rendered path (serialize-lesskey)))
+
+(define* (install-bash #:key (target #f))
+  "Write the Bash configuration to @var{target}, ~/.bashrc by default, and
+install the pager keymap beside it.  Another path is what lets a test render
+into a synthetic home instead of the real one."
+  (let ((target-rc (or target
+                       (format #f "~a/.bashrc"
+                               (getenv "HOME")))))
     (ensure-smart-emacsclient-bin)
     (when (file-exists? target-rc)
       (let ((backup-rc (string-append target-rc ".bak")))
@@ -485,13 +729,11 @@ is the first place less(1) looks for it."
           (delete-file backup-rc))
         (copy-file target-rc backup-rc)))
 
-    (with-output-to-file target-rc
-      display-config-thunk)
-    ;; The pager keymap lives outside the rc so less can read it directly.
+    (write-bash-config target-rc)
+    ;; The pager keymap lives outside the rc so less can read it directly; it
+    ;; is the rendering of `bash-pager-keymap', not the checked-in copy, so a
+    ;; stale file in the tree cannot reach the install.
     (let ((target-lesskey (lesskey-target-path)))
       (mkdir-p (dirname target-lesskey))
-      (with-output-to-file target-lesskey
-        (lambda ()
-          (set-port-encoding! (current-output-port) "UTF-8")
-          (display (read-source-file (lesskey-filename))))))
-    (display "\nInstalled Bash configuration!")))
+      (write-lesskey target-lesskey))
+    (display (format #f "\nInstalled Bash configuration in ~a!" target-rc))))

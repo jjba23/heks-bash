@@ -197,14 +197,14 @@ __n_topic_lines () {
 
 # `Work Stuff/Infra' -> `work-stuff/infra'
 __n_topic_name () {
-    local s out='' segs
+    local s slug='' segs
     IFS=/ read -r -a segs <<< "$1"
     for s in "${segs[@]}"
     do
         [[ -n $s ]] || continue
-        out+=${out:+/}$(__n_slug "$s")
+        slug+=${slug:+/}$(__n_slug "$s")
     done
-    printf '%s\n' "$out"
+    printf '%s\n' "$slug"
 }
 
 # Ask where a note goes; sets REPLY.  A topic that does not exist is made.

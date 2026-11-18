@@ -249,6 +249,7 @@ about () {
     printf '%s%s%s %s%s%s\n' \
         "$CC_ACCENT_OUT" "$CC_SIGIL" "$CC_RESET_OUT" \
         "$CC_BOLD_OUT" "$CC_FLAVOR" "$CC_RESET_OUT"
+    printf '  %sversion%s %s\n' "$CC_DIM_OUT" "$CC_RESET_OUT" "${CC_VERSION:-unknown}"
     printf '  %skind%s    %s\n' "$CC_DIM_OUT" "$CC_RESET_OUT" "$CC_HOST_KIND"
     printf '  %shost%s    %s@%s\n' "$CC_DIM_OUT" "$CC_RESET_OUT" "${USER:-$(id -un)}" "$(uname -n)"
     printf '  %ssystem%s  %s\n' "$CC_DIM_OUT" "$CC_RESET_OUT" "$(uname -srm)"
@@ -260,7 +261,7 @@ about () {
         "$([[ ${CC_PLAIN:-0} != 0 || -n ${NO_COLOR:-} ]] && echo plain || echo colour)"
     printf '  %spager%s   less · Emacs keys · %s\n' \
         "$CC_DIM_OUT" "$CC_RESET_OUT" "$CC_LESSKEY"
-    printf '  %shelpers%s about · pager-keys · hist-top · paths · extract · mkcd · up · serve · bak · calc · json · notify\n' \
+    printf '  %shelpers%s about · pager-keys · tools · hist-top · paths · extract · mkcd · up · serve · bak · calc · json · notify\n' \
         "$CC_DIM_OUT" "$CC_RESET_OUT"
 }
 
@@ -325,7 +326,7 @@ psg () {
 }
 
 kport () {
-    local p=${1:-} pids=''
+    local p=${1:-} one='' pids=()
     if [[ -z $p ]]
     then
         printf 'usage: kport <port>\n' >&2
@@ -333,18 +334,26 @@ kport () {
     fi
     if __cc_has lsof
     then
-        pids=$(lsof -ti "tcp:$p" 2> /dev/null)
+        mapfile -t pids < <(lsof -ti "tcp:$p" 2> /dev/null)
     elif __cc_has ss
     then
-        pids=$(ss -tlnpH "sport = :$p" 2> /dev/null \
+        mapfile -t pids < <(ss -tlnpH "sport = :$p" 2> /dev/null \
             | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u)
     fi
-    if [[ -z $pids ]]
+    if ((${#pids[@]} == 0))
     then
         printf 'kport: nothing listening on %s\n' "$p" >&2
         return 1
     fi
-    kill $pids && printf 'kport: sent TERM to %s\n' "$pids"
+    # One pid per array element: the list is newline separated, and splitting
+    # it into words on purpose is how `kill' gets several arguments.
+    if kill "${pids[@]}"
+    then
+        for one in "${pids[@]}"
+        do
+            printf 'kport: sent TERM to %s\n' "$one"
+        done
+    fi
 }
 
 serve () {
@@ -422,31 +431,72 @@ paths () {
     done
 }
 
-# The pager keymap (installed as $XDG_CONFIG_HOME/lesskey) in one screen.
+# The pager keymap (installed as $XDG_CONFIG_HOME/lesskey) in one screen.  The
+# rows come from CC_PAGER_KEYS_* , which the rc renders from the same Scheme
+# list the lesskey file is rendered from.
 pager-keys () {
     local b=${CC_BOLD_OUT:-} d=${CC_DIM_OUT:-} r=${CC_RESET_OUT:-}
-    local a=${CC_ACCENT_OUT:-}
+    local a=${CC_ACCENT_OUT:-} entry label keys
     printf '%s%spager%s less · Emacs keys · %s\n\n' \
         "$b" "$a" "$r$d" "$CC_LESSKEY"
-    printf '  %s%-11s%s %s\n' "$b" 'C-n  C-p' "$r" 'one line down / up'
-    printf '  %s%-11s%s %s\n' "$b" 'C-f  C-b' "$r" 'one screen down / up'
-    printf '  %s%-11s%s %s\n' "$b" 'C-v  M-v' "$r" 'one screen down / up'
-    printf '  %s%-11s%s %s\n' "$b" 'C-d  C-u' "$r" 'half a screen down / up'
-    printf '  %s%-11s%s %s\n' "$b" 'C-a  C-e' "$r" 'top / bottom of the file'
-    printf '  %s%-11s%s %s\n' "$b" 'M-<  M->' "$r" 'top / bottom of the file'
-    printf '  %s%-11s%s %s\n' "$b" 'C-s  C-r' "$r" 'search forward / backward'
-    printf '  %s%-11s%s %s\n' "$b" 'M-g' "$r" 'go to line'
-    printf '  %s%-11s%s %s\n' "$b" 'M-u' "$r" 'clear the search highlighting'
-    printf '  %s%-11s%s %s\n' "$b" 'C-l' "$r" 'redraw the screen'
+    for entry in "${CC_PAGER_KEYS_COMMAND[@]}"
+    do
+        IFS=$'\t' read -r label keys <<< "$entry"
+        printf '  %s%-22s%s %s\n' "$b" "$keys" "$r" "$label"
+    done
     printf '\n  %sin prompts (:e, /, ?, ...)%s\n' "$d" "$r"
-    printf '  %s%-11s%s %s\n' "$b" 'C-a  C-e' "$r" 'beginning / end of the line'
-    printf '  %s%-11s%s %s\n' "$b" 'C-b  C-f' "$r" 'one character left / right'
-    printf '  %s%-11s%s %s\n' "$b" 'M-b  M-f' "$r" 'one word left / right'
-    printf '  %s%-11s%s %s\n' "$b" 'C-w  M-d' "$r" 'kill the word before / after the cursor'
-    printf '  %s%-11s%s %s\n' "$b" 'C-k  C-u' "$r" 'kill the whole line'
-    printf '  %s%-11s%s %s\n' "$b" 'C-g' "$r" 'cancel the prompt'
+    for entry in "${CC_PAGER_KEYS_LINE_EDIT[@]}"
+    do
+        IFS=$'\t' read -r label keys <<< "$entry"
+        printf '  %s%-22s%s %s\n' "$b" "$keys" "$r" "$label"
+    done
     printf '\n  %sstill plain less%s: space b · g G · / ? · n N · m '\'' · ! · | · q%s\n' \
         "$d" "$r" "$r"
+}
+
+# Is TOOL there?  KIND says how to look: a command on PATH, or a file, whose
+# name may start with ~ because the rc renders these probes for the home it
+# installs into.
+__cc_tool_present () {
+    case $2 in
+        file) [[ -e ${1/#\~/$HOME} ]] ;;
+        *) __cc_has "$1" ;;
+    esac
+}
+
+# The install hint for TOOL, from the one table that names the dependencies.
+__cc_tool_hint () {
+    local entry
+    for entry in "${CC_TOOLS[@]}"
+    do
+        case $entry in
+            "$1"$'\t'*) printf '%s' "${entry##*$'\t'}" ; return 0 ;;
+        esac
+    done
+    return 1
+}
+
+# What this configuration leans on, what each piece is for, and what is
+# missing.  Reporting is not a failure, so it always returns 0.
+tools () {
+    local entry name probe kind purpose hint missing
+    printf '%s%stools%s the runtime dependencies\n\n' \
+        "${CC_BOLD_OUT:-}" "${CC_ACCENT_OUT:-}" "${CC_RESET_OUT:-}"
+    for entry in "${CC_TOOLS[@]}"
+    do
+        IFS=$'\t' read -r name probe kind purpose hint <<< "$entry"
+        if __cc_tool_present "$probe" "$kind"
+        then
+            printf '  %-10s %s%-8s%s %s\n' "$name" \
+                "${CC_GOOD_OUT:-}" 'ok' "${CC_RESET_OUT:-}" "$purpose"
+        else
+            printf '  %-10s %s%-8s%s %s\n' "$name" \
+                "${CC_BAD_OUT:-}" 'missing' "${CC_RESET_OUT:-}" "$purpose"
+            [[ -n $hint ]] && printf '             %s%s%s\n' \
+                "${CC_DIM_OUT:-}" "$hint" "${CC_RESET_OUT:-}"
+        fi
+    done
+    return 0
 }
 
 reload () {
@@ -479,7 +529,7 @@ cdroot () {
 ai () {
     if ! __cc_has eca-cli
     then
-        printf 'ai: eca-cli is not on PATH (cd ~/Hacking/heks-linux && maak install-eca)\n' >&2
+        printf 'ai: eca-cli is not on PATH (%s)\n' "$(__cc_tool_hint eca-cli)" >&2
         return 127
     fi
     local root
