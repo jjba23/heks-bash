@@ -24,8 +24,10 @@ Modern Shell Experience ✨ with:
 
 The project is written mostly in Lisp  and Bash (shell script).
 
-This is =heks-bash 2.2.0=.  What changed, and what breaks, is in
-[[file:CHANGELOG.org][CHANGELOG.org]].
+This is =heks-bash 2.2.1=.  What changed, and what breaks, is in
+[[file:CHANGELOG.org][CHANGELOG.org]]; the notes format has a page of its own in
+[[file:docs/notes-format.org][docs/notes-format.org]], and
+[[file:VISION.md][VISION.md]] says where this is going next.
 
 This project uses [[https://codeberg.org/jjba23/maak][Maak, the infinitely extensible command-runner]] as automation system.  Four tasks matter: ~maak install-bash~ writes the
 configuration, ~maak install-ble-sh~ installs the pinned line editor,
@@ -181,6 +183,76 @@ lives.
 
 =C-s= is also a working forward-search in readline because =cc_boot= runs
 =stty -ixon= on interactive ttys (no more frozen terminal on =C-s=).
+
+----------------
+
+** What is in the generated file
+
+`bash-config` returns the rc as a list of chunks, and the order is the order a
+shell meets them.  Each line of the table is one chunk, one thing to know when
+reading or diffing the file:
+
+| # | Chunk                      | What it is and where it comes from                                      |
+|---+----------------------------+-------------------------------------------------------------------------|
+| 1 | header and identity        | the version banner, then the `CC_*` assignments: =bash-identity=, =CC_VERSION= |
+| 2 | prelude                    | the system rc, ble.sh, the readline bindings, `shopt`, `include()` =bash-prelude= |
+| 3 | variables                  | the `export` lines, from =bash-vars=                                    |
+| 4 | data arrays                | `CC_GREETINGS`, `CC_PAGER_KEYS_*`, `CC_TOOLS` - read by the library below |
+| 5 | the shell library          | =shell-lib.bash=, verbatim                                              |
+| 6 | git shortcuts              | one function each, from =bash-git-shortcuts=                            |
+| 7 | the notes command          | `NOTES_DIR`, then =notes.bash=, verbatim                                |
+| 8 | machine functions/aliases  | =bash-functions=, =bash-aliases=, then the =PATH= prepends               |
+| 9 | postlude                   | bash-completion, fzf, mise, direnv, the Guix profile =bash-postlude=    |
+| 10 | `cc_boot`                  | the call that colours, hooks and greets                                 |
+
+Chunks 1-3 and 6-8 are generated from data; 5 and 7 are spliced from a file a
+person edits as Bash; 4 is data rendered for the library in 5 to read.  The
+blank lines between chunks are deliberate: each block is meant to be readable
+on its own in the generated file.
+
+----------------
+
+** The notes command (`n`)
+
+The largest thing here is not the prompt: it is =notes.bash=, the terminal front
+end of my notes system - the basics of the Emacs setup for when Emacs is not at
+hand.  It reads and writes the same Org files, in the same formats, so the two
+front ends never disagree:
+
+#+begin_src shell
+n capture -t Work "a thought I had on the train"   # title prefilled, Enter accepts it
+n find dentist                                     # pick a note, open it
+n todo Call the dentist                            # into todo.org's Inbox
+n today                                            # birthdays, habits, open items
+n index                                            # refresh every index page
+#+end_src
+
+`n capture` prompts for a title, prefilled from the first 60 characters of the
+text; `-T` skips the prompt, which is the form to use in a script (with `-T`
+and `-t` it needs no terminal at all).
+
+| Verb                    | What it does                                                     |
+|-------------------------+------------------------------------------------------------------|
+| =n capture [text...]=   | file a thought in one line, with `-t` topic, `-T` title, `-g` tags, `-c` clipboard |
+| =n new [topic] [title]= | create a note and open it in `$NOTES_DIR`'s editor               |
+| =n find [query]=        | pick a note (fzf) and open it at no particular line              |
+| =n search <pattern>=    | grep the tree and open the hit at its line                       |
+| =n todo <text>=         | append to the inbox in =todo.org=                                |
+| =n todos=               | every TODO, WIP and REVIEWING item in the tree                   |
+| =n today=               | birthdays within a week, habits due, open inbox items            |
+| =n bookmark [add] …=    | open a bookmark, or file a URL under a category                  |
+| =n contact [add] …=     | find a contact (copies the address), or add one                  |
+| =n birthdays [days]=    | coming birthdays, default 30 days                                |
+| =n index=               | regenerate every =index.org=, deepest first                      |
+| =n cd [topic]=          | move the shell into a topic folder                               |
+| =n dir=                 | print the notes directory                                        |
+
+Everything optional degrades: without =fzf= each picker prints the rows it would
+have shown, without a clipboard a capture starts empty, without an opener the
+URL is printed.  The formats themselves - the tree, the front matter, what the
+index markers own, what `n` guarantees about a file it rewrites - are the
+subject of [[file:docs/notes-format.org][The notes format]], which is the page to
+read before changing either side.
 
 ----------------
 

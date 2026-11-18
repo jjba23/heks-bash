@@ -11,6 +11,50 @@ when it started doing it.  The version it describes lives in =bash.scm= as
 
 Nothing yet.
 
+* 2.2.1 - 2026-11-18
+
+A documentation release: no behaviour changed, and the only difference a user
+can see is the version string.  The point was to make the code explain itself
+where it is read, and to write down the one contract that two implementations
+share.
+
+** Every function says what it is for
+
+- =bash.scm= has a Commentary that states the split the whole project rests on
+  (data here, procedure in the two shell files), the order the rendered file is
+  assembled in, and what the entry points are for.  Every parameter carries the
+  question it answers - which machine, which alias, which keys, which tools -
+  and every serialiser says which shape it renders.
+- =shell-lib.bash= opens with a map of its own sections and the order they are
+  sourced in, and each function has a first line saying why it exists.  The
+  prompt internals carry the detail: which porcelain v2 records are read and
+  what each one means, why the palette keeps two copies of every sequence, why
+  the theme is asked for once.
+- =notes.bash= opens with the notes format itself - the tree, what a note is,
+  what the index markers own, the shape of the four side files, how it fails,
+  and what it needs - and every one of its 45 functions says what it does, with
+  the awk insertion, the picker's three-line output, the index rewrite and the
+  birthday arithmetic explained where they happen.
+- The test file explains how to add a test to each half, and =maak.scm= lists
+  the tasks in the order a contributor meets them.
+
+** The notes format is a document**
+
+- [[file:docs/notes-format.org][docs/notes-format.org]] states the contract
+  between `n` and the Emacs side: the tree, the front matter, the index markers
+  and the three regions they preserve, `todo.org` and `habits.org`,
+  `contacts.org` and `bookmarks.org`, what `n` guarantees about a file it
+  rewrites (atomic writes, exit codes, nothing outside the tree), and which
+  side owns what.
+- The README gains two sections it was missing: what the ten chunks of the
+  generated file are and where each comes from, and what the `n` command
+  actually does - it was the largest thing in the project and had no page.
+
+** Fixed**
+
+- =ensure-smart-emacsclient-bin= had a stray `(dirname script-path)` that
+  evaluated and discarded its value.
+
 * 2.2.0 - 2026-11-18
 
 The release where the generated files became testable, and where more of the

@@ -1,0 +1,202 @@
+#+title: The notes format
+#+author: Josep Bigorra
+#+email: jjbigorra@gmail.com
+
+#+begin_quote
+The contract between `n` (in `src/heks-bash/notes.bash`) and Emacs (in the
+heks-emacs configuration): one tree, six kinds of file, two implementations.
+This page says what a file must look like for both to read it, and what each
+side owns.
+#+end_quote
+
+* The tree
+
+: $NOTES_DIR/<topic>/<slug>.org
+: $NOTES_DIR/<topic>/<sub>/<slug>.org
+: $NOTES_DIR/todo.org
+: $NOTES_DIR/habits.org
+: $NOTES_DIR/contacts.org
+: $NOTES_DIR/bookmarks.org
+: $NOTES_DIR/<topic>/index.org
+: $NOTES_DIR/.archive/...
+
+`$NOTES_DIR` is `NOTES_DIR`, defaulting to `~/Hacking/private-notes`.  A topic
+is a directory, a nested topic is a subdirectory, and a note is one Org file in
+one of them.
+
+Two kinds of directory are deliberately not topics: any hidden directory, and a
+`diary` at the root - that one belongs to Emacs's calendar.  `.archive` is a
+topic tree filed away: `n index` still writes its pages, and nothing else lists
+it.
+
+A missing `$NOTES_DIR` is an error, never a directory to be created.  The tree
+is the user's.
+
+* What a note is
+:PROPERTIES:
+:CUSTOM_ID: note-file
+:END:
+
+#+begin_src org
+#+title: Some title
+#+date: [2026-11-18 Wed]
+#+filetags: :work:idea:
+
+The body, in Org.
+#+end_src
+
+- =#+title:= is the title as typed.  It is what index pages link with.  A note
+  without one is titled by its file name, so the link is never empty.
+- =#+date:= is an Org *active* timestamp, =[YYYY-MM-DD Www]=.  `n` always writes
+  it with =LC_ALL=C=, so the weekday names do not follow the shell's locale.
+- =#+filetags:= is written only when tags were given, and always in the
+  colon-wrapped form Org expects.  Tags typed as `a,b` are re-joined as `a:b`.
+- One blank line between the front matter and the body.
+
+The file name is the *slug* of the title: lower case, every run of characters
+outside `[a-z0-9]` collapsed to a single dash, leading and trailing dashes
+removed, `untitled` when nothing is left.  A collision takes =-2=, =-3=, … and
+never overwrites, so a name is stable once written: rename the file in Emacs if
+you want a different one.
+
+* Index pages
+:PROPERTIES:
+:CUSTOM_ID: index-pages
+:END:
+
+#+begin_src org
+#+title: Work
+#+date: [2026-11-18 Wed]
+
+A sentence the user wrote about this topic.
+
+# BEGIN GENERATED INDEX
+* Topics
+- [[file:./infra/index.org][Infra]]
+* Notes
+- [[file:./a-note.org][A note]]
+- [[file:./another.org][Another]]
+# END GENERATED INDEX
+
+Anything the user wrote after the marker.
+#+end_src
+
+Only the region between the two markers belongs to the generator.  Three
+regions are carried over verbatim on every rewrite:
+
+| Region      | What it is                                             |
+|-------------+--------------------------------------------------------|
+| head        | the =#+= keyword lines and any property drawer above them |
+| description | the prose between the head and the generated region     |
+| tail        | everything after =# END GENERATED INDEX=                |
+
+A page with no markers is somebody's own page: it is left alone, permanently.
+That is how a topic opts out of generated indexes.
+
+Inside the region, `* Topics` lists the subdirectories that contain at least
+one Org file, and `* Notes` lists the notes in the directory itself.  A
+directory below the root gets both, each only when it has something to list.
+The root page is a table of topics: it has `* Topics` and no `* Notes`, so a
+note left loose at the top of the tree is reachable by `n find` but not from
+the root page.  A non-root directory with nothing to list gets no page at all.
+
+Links are =[[file:./name.org][Title]]=, relative to the page.  Titles come from
+=#+title:=; subdirectory labels are the slug made readable again
+(`http-apis` becomes `HTTP APIs`, through the acronym table at the top of
+`notes.bash`).  Ordering is `LC_ALL=C sort -f`: code-point order with case
+folded, which is what the Emacs side writes and what keeps an emoji after the
+letters.
+
+=n index= walks deepest first and then the root, so one pass is enough; a page
+whose bytes would not change is not rewritten, so the command is cheap and safe
+to repeat.
+
+* todo.org and habits.org
+
+=todo.org= holds an =* Inbox= section whose items are level-2 TODOs:
+
+#+begin_src org
+#+title: Todo
+
+* Inbox
+** TODO Call the dentist
+:PROPERTIES:
+:CREATED: [2026-11-18 Wed 09:41]
+:END:
+#+end_src
+
+`n todo` appends at the end of the Inbox subtree, before the next level-1
+heading, and creates the file (with the =* Inbox= heading) when it is missing.
+=:CREATED:= is an active timestamp down to the minute.
+
+=habits.org= is read-only from the shell: =n today= reports a habit as due when
+a =* TODO= heading is followed by a =SCHEDULED:= line whose date is today or
+earlier.  The repeaters (=.+1w=, =++1m=, …) are Emacs's to interpret; `n` only
+compares the date, which is why a habit the shell marks due may be one Emacs
+just completed.
+
+* contacts.org and bookmarks.org
+
+#+begin_src org
+#+title: Contacts
+
+* Ada Lovelace
+:PROPERTIES:
+:EMAIL: ada@example.org
+:PHONE: +44 1
+:BIRTHDAY: 1815-12-10
+:END:
+#+end_src
+
+Contacts are level-1 headings with an optional property drawer; all three
+properties are optional and an absent one is simply not written (no empty
+drawers).  =:BIRTHDAY:= accepts `YYYY-MM-DD`, `--MM-DD` and `MM-DD`; the age is
+shown only when the year is there, and 29 February falls on the 28th in a year
+without one.
+
+#+begin_src org
+#+title: Bookmarks
+
+* Work
+** Docs
+- [[https://example.org/spec][The spec]]
+- [[https://example.org/notes]]
+#+end_src
+
+Bookmarks are links in the body; the heading path above a link is its category,
+so =Work / Docs= here.  A link with no title is shown as its URL.  This file is
+never created by `n`: it is the user's, and adding to a missing one is an error.
+
+* What `n` guarantees
+:PROPERTIES:
+:CUSTOM_ID: guarantees
+:END:
+
+- *Nothing outside the tree.* Every write lands below `$NOTES_DIR`; `$NOTES_DIR`
+  itself is not created.
+- *No truncated files.* `todo.org` and `bookmarks.org` are rewritten through a
+  temporary file next to them and a rename; `index.org` is written the same way
+  and skipped entirely when nothing changed.
+- *No overwritten notes.* A slug collision takes the next free number.
+- *Exit codes.* 2 for a usage error (no verb, a missing argument), 1 for a
+  failure (no notes directory, no such topic), 0 with a message when there is
+  simply nothing to report - `n todos` with nothing open is not an error.
+- *Locale independence.* Dates and sort orders are computed with `LC_ALL=C`.
+- *No required optional tools.* Without `fzf` every picker becomes a listing -
+  the rows it would have shown are printed and one is picked by name, or the
+  command prints them all.  Without a clipboard a capture starts empty; without
+  an opener the URL is printed.  `rg` is used when present, `grep` otherwise.
+
+* What Emacs owns and what `n` owns
+
+Both implementations read and write this format; neither invents a second one.
+The split that matters in practice:
+
+- Emacs owns habits: repeaters, completion, history.  `n` reports what is due
+  and never writes `habits.org`.
+- Emacs owns the parts of an index page outside the markers, and `n` preserves
+  them byte for byte.  A description written in Emacs survives every `n index`.
+- Both own notes: either can create one, and both slug titles the same way.
+
+=heks-emacs/docs/notes.org= describes the same format from the Emacs side.  When
+the two disagree, the file on disk is the tie-breaker and this page is wrong.
