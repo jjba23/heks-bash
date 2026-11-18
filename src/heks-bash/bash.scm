@@ -91,16 +91,27 @@
 
 (define (bash-prelude)
   (list "[ -f /etc/bashrc ] && . /etc/bashrc"
-        "# shellcheck source=/dev/null"
-        (string-append "[[ $- == *i* && -r "
+        ;; ble.sh, the readline bindings and bash-completion all need a bash
+        ;; built with readline and programmable completion.  Nix's bash has
+        ;; neither, so every one of those lines prints an error there; ask once
+        ;; and let the rest of the rc (and the postlude) skip them.
+        "if (shopt -q progcomp && command -v bind) &>/dev/null; then"
+        "    CC_COMPLETIONS=1"
+        "else"
+        "    CC_COMPLETIONS=0"
+        "fi"
+        "if [[ $CC_COMPLETIONS == 1 ]]; then"
+        "    # shellcheck source=/dev/null"
+        (string-append "    [[ $- == *i* && -r "
                        (format #f "~a/ble.sh"
                                (heks-bash-ble-sh-dir)) " ]] && source -- "
                        (format #f "~a/ble.sh"
                                (heks-bash-ble-sh-dir)) " || true")
-        "bind \"set completion-ignore-case on\""
-        "bind \"set completion-map-case on\""
-        "bind \"set show-all-if-ambiguous on\""
-        "bind \"set mark-symlinked-directories on\""
+        "    bind \"set completion-ignore-case on\""
+        "    bind \"set completion-map-case on\""
+        "    bind \"set show-all-if-ambiguous on\""
+        "    bind \"set mark-symlinked-directories on\""
+        "fi"
         "shopt -s autocd 2> /dev/null"
         "shopt -s dirspell 2> /dev/null"
         "shopt -s cdspell 2> /dev/null"
@@ -336,10 +347,14 @@ fi
 
 (define (bash-postlude)
   (list "set -o noclobber"
-   "set -o emacs"
-   "include /run/current-system/profile/share/bash-completion/bash_completion"
+   ;; `set -o emacs' (readline) and everything completion related live here
+   ;; too; CC_COMPLETIONS comes from the prelude.
+   "if [[ $CC_COMPLETIONS == 1 ]]; then"
+   "    set -o emacs"
+   "    include /run/current-system/profile/share/bash-completion/bash_completion"
+   "    command -v fzf &>/dev/null && eval \"$(fzf --bash)\""
+   "fi"
 
-   "command -v fzf &>/dev/null && eval \"$(fzf --bash)\""
    "[[ -f ~/.local/bin/mise ]] && eval \"$(~/.local/bin/mise activate bash)\""
 
    "include /run/current-system/profile/etc/profile.d/nix.sh"

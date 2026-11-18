@@ -173,6 +173,11 @@ lives.
 
 You can update  ble.sh with ~ble-update~
 
+ble.sh, the =bind= lines and bash-completion all need a bash built with
+readline and programmable completion.  The generated rc asks once
+(=CC_COMPLETIONS=) and skips that whole layer in a bash without them, such as
+the one Nix ships, instead of printing an error per line.
+
 ----------------------
 
 * AI Policy

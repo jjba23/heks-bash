@@ -981,4 +981,5 @@ _n_complete () {
         mapfile -t COMPREPLY < <(compgen -W "$(__n_topics)" -- "$cur")
     fi
 }
-complete -F _n_complete n
+# Only a bash with programmable completion can register the completer.
+__cc_has complete && complete -F _n_complete n
