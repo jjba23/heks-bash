@@ -48,22 +48,86 @@
    (list "guile" "-L" "./src" "-c" "'((@(heks-bash bash) install-bash))'")
    #:verbose? #t))
 
-(define (install-ble-sh)
-  "Install ble.sh from upstream under ~/.local.
+(define (check)
+  "Run the tests and the shell linter.  This is the task that must be green.
 
-The upstream tree is cloned shallow with its submodules -- ble.sh vendors its
-own completion packages that way -- and `make install' is pointed at ~/.local,
-so nothing outside the home directory is touched."
+Two halves.  The Guile tests run inside the pinned toolchain, because rendering
+is what they exercise, and they cover both the generated file as data and the
+same file sourced in a synthetic home.  `shellcheck' runs from PATH instead:
+pulling a Haskell package into the manifest to lint three shell files is a bad
+trade, so a machine without it fails here with the one line that installs it.
+`.shellcheckrc' records what is reported and why."
+  (unless (run (list "shellcheck" "--version")
+               #:dev-null? #t
+               #:allow-failure? #t)
+    (error "maak check needs shellcheck on PATH (install shellcheck)"))
+  ;; Render first: the linter gets the file this configuration actually
+  ;; produces, not only the library it is spliced from.
+  (time-machine-manifest-shell
+   (list "guile" "-L" "./src" "-c"
+         "'((@ (heks-bash bash) write-bash-config) \"bashrc.bash\")'"))
+  (run (list "shellcheck"
+             "src/heks-bash/shell-lib.bash"
+             "src/heks-bash/notes.bash"
+             "bashrc.bash")
+       #:verbose? #t)
+  (time-machine-manifest-shell
+   (list "guile" "-L" "./src" "test/heks-bash.scm")
+   #:verbose? #t))
+
+(define (render . args)
+  "Refresh every rendering that lives in the repository, and the rc.
+
+`bashrc.bash' (gitignored) is the rendered rc - or the path given as an
+argument - and `src/heks-bash/lesskey' is the rendered pager keymap, the copy
+the sibling repositories carry.  Both come from Scheme, so rendering is how the
+checked-in file is kept honest; `maak check' fails when the two disagree."
+  (time-machine-manifest-shell
+   (append (list "guile" "-L" "./src" "-c"
+                 (string-append
+                  "'(let ((args (cdr (command-line))))
+                     (display \"Wrote \")
+                     (display ((@ (heks-bash bash) write-bash-config)"
+                  " (if (null? args) \"bashrc.bash\" (car args))))
+                     (display \" and src/heks-bash/lesskey\")
+                     (newline)
+                     ((@ (heks-bash bash) write-lesskey)"
+                  " \"src/heks-bash/lesskey\"))'"))
+           args)))
+
+(define (install-ble-sh)
+  "Install the pinned ble.sh under ~/.local.
+
+ble.sh builds itself and moves with `ble-update', which is not reproducible: a
+configuration that changes when upstream pushes is a configuration that breaks
+on a machine you did not test.  So the installer fetches one commit - the one
+`ble-sh-commit' names, version `ble-sh-version' - with its vendored submodules,
+checks that commit out and points `make install' at ~/.local, so nothing
+outside the home directory is touched.  `ble-update' still works; it just takes
+the pin away, and re-running this task puts it back."
   (let ((source "/tmp/ble.sh")
         (prefix (~ "~a/.local" (home-dir))))
     (delete-file-recursively source)
-    ;; `git-clone' models `--branch', `--depth' and `--bare'; the submodule and
-    ;; shallow-submodule flags are passed through the escape hatch instead.
-    (git (list "clone" "--recursive" "--depth" "1" "--shallow-submodules"
-               "https://github.com/akinomyoga/ble.sh.git" source)
+    (mkdir-p source)
+    ;; `git clone --depth 1' takes a branch, not a commit, so the pin is one
+    ;; fetch of one commit into an empty repository.
+    (git (list "init" "--quiet") #:directory source)
+    (git (list "remote" "add" "origin" (ble-sh-repository)) #:directory source)
+    (git (list "fetch" "--depth" "1" "origin" (ble-sh-commit))
+         #:directory source
+         #:verbose? #t)
+    (git (list "checkout" "--quiet" "FETCH_HEAD") #:directory source)
+    ;; The completion packages ble.sh vendors live in submodules, and they have
+    ;; to come from the same commit.
+    (git (list "submodule" "update" "--init" "--recursive" "--depth" "1")
+         #:directory source
          #:verbose? #t)
     (run (list "make" "-C" source "install" (~ "PREFIX=~a" prefix))
-         #:verbose? #t)))
+         #:verbose? #t)
+    (display (~ "installed ble.sh ~a (~a) in ~a~%"
+                (ble-sh-version)
+                (ble-sh-commit)
+                prefix))))
 
 ;; ====== Agent skills ======
 

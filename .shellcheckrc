@@ -1,0 +1,28 @@
+# shellcheck configuration for heks-bash.
+#
+# The generated rc and the two shell libraries beside it are a prompt engine, a
+# set of helpers and a notes command.  Every finding shellcheck reports is
+# either fixed or listed here with the reason it is not a defect; nothing is
+# silenced globally by severity, because a warning that is hidden by a blanket
+# rule is a warning nobody ever reads again.
+
+# SC2009: `psg' greps the process list on purpose.  pgrep would be the same
+# idea with a different portability story (`pgrep -a' is GNU-only) and the
+# function is a fallback for machines where pgrep is not what you expect.
+# SC2012: `ls -t | head -1' asks for the newest file, which is what mtime
+# ordering is for; `find | sort' would be more code for the same answer on the
+# slugs this code writes.
+disable=SC2009,SC2012
+
+# SC2034: the palette variables are assigned in a loop and read through
+# ${!name}; shellcheck cannot follow that.
+# SC2155: the tput colour exports intentionally combine the assignment with the
+# command substitution - there is no exit status to lose.
+# SC1090: `include' sources rc fragments by path, and the rc sources the system
+# and profile files it finds; SC1091 is the same thing for a path it can name
+# but not follow (the path is only known at runtime, on the machine).
+disable=SC2034,SC2155,SC1090,SC1091
+
+# The generated file is assembled from this tree, so a `source' it cannot
+# follow is expected rather than suspicious.
+external-sources=false
