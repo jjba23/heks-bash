@@ -40,6 +40,26 @@
 # single `git status --porcelain=v2 --branch'. The pager is plain less with
 # the Emacs keymap from the sibling `lesskey' file, installed by the same
 # installer that writes this rc.
+#
+# How this file is arranged, in order:
+#
+#   defaults        CC_PATH_DEPTH, CC_ACCENT, CC_FLAVOR and friends, defaulted
+#                   so this file also works when spliced without bash.scm
+#   history         one big, timestamped, de-duplicated history per machine
+#   pager           less everywhere, with the keymap from $XDG_CONFIG_HOME
+#   palette         the 256-colour sequences, and their readline-safe copies
+#   prompt pieces   __cc_trim_path, __cc_env_badge, __cc_git_sync, __cc_prompt
+#   greeting        one saying from CC_GREETINGS per interactive startup
+#   self knowledge  about: identity, versions, prompt settings, keymap path
+#   helpers         coreutils-only verbs: mkcd, up, extract, serve, bak, calc,
+#                   json, paths, psg, kport, ports, notify, ff, reload, cdroot,
+#                   hist-top, hgrep, gunlog, rc-time, ai, glog
+#   keymap + tools  pager-keys and tools, both reporting data from bash.scm
+#   boot            cc_boot, the last line of the rendered rc
+#
+# The prompt is drawn on every command by __cc_prompt, which is installed as
+# PROMPT_COMMAND once by cc_boot; nothing in this file runs at source time
+# except the defaults, the shopt calls and the variable assignments above.
 # =============================================================================
 
 CC_PATH_DEPTH=${CC_PATH_DEPTH:-3}
@@ -144,6 +164,19 @@ __cc_env_badge () {
 
 # One fork per prompt: porcelain v2 gives branch, upstream divergence and the
 # dirty state in a single call. Untracked files are ignored (they are noise).
+#
+# The output is a list of records, and four of them are read here:
+#
+#   # branch.head <name>          `(detached)' when HEAD is not on a branch
+#   # branch.oid <sha>            shortened to seven characters when detached
+#   # branch.ab +<ahead> -<behind>
+#   u <xy> …                      one conflict entry
+#   <1|2> <xy> …                  one changed entry
+#
+# Stashes are counted from .git/logs/refs/stash, which is a plain text log, so
+# the count costs no second fork.  Nothing is printed: the result is left in
+# CC_GIT_SEG for __cc_prompt, and a directory that is not in a work tree simply
+# leaves it empty.
 __cc_git_sync () {
     CC_GIT_SEG=''
     local dir=$PWD gd=''
@@ -235,6 +268,8 @@ __cc_prompt () {
 # The pool of sayings (CC_GREETINGS) is data and lives in bash.scm
 # (`bash-greetings'); it is emitted into the rc before this runs.
 
+# Print one saying from the pool, under the machine badge.  The pool is
+# data in bash.scm (`bash-greetings'), rendered as CC_GREETINGS.
 shell-greeting () {
     local q=${CC_GREETINGS[RANDOM % ${#CC_GREETINGS[@]}]}
     printf '%s%s%s %s%s%s  %s%s%s\n\n' \
@@ -244,6 +279,10 @@ shell-greeting () {
 }
 
 # ---- self knowledge ---------------------------------------------------------
+# Everything this configuration can say about itself in one answer: identity,
+# version, shell and git versions, prompt settings, and where the pager keymap
+# lives.  The first thing to run on an unfamiliar machine - or after a change,
+# to see what it took.  Colour-free when CC_PLAIN is set, like the prompt.
 about () {
     local shell_name="bash $BASH_VERSION"
     printf '%s%s%s %s%s%s\n' \
@@ -268,8 +307,12 @@ about () {
 # -----------------------------------------------------------------------------
 # Helper functions (vanilla: coreutils + git only)
 # -----------------------------------------------------------------------------
+# Is PROGRAM on PATH?  The one presence check every helper and tool probe
+# goes through, so 'absent' means the same thing everywhere.
 __cc_has () { command -v "$1" > /dev/null 2>&1; }
 
+# mkdir -p, then cd, in one call: a cd that fails fails the command, so
+# a typo cannot leave you in the wrong directory silently.
 mkcd () {
     if [[ -z ${1:-} ]]
     then
@@ -279,6 +322,7 @@ mkcd () {
     mkdir -p -- "$1" && cd -- "$1" || return
 }
 
+# Go up N directories (default 1) and print where you landed.
 up () {
     local n=${1:-1} p=''
     while ((n-- > 0))
@@ -289,6 +333,9 @@ up () {
     pwd
 }
 
+# Unpack an archive by its extension.  An unknown extension is an error
+# rather than a no-op, because a command that does nothing looks like a
+# file that unpacked.
 extract () {
     local f=${1:-}
     if [[ ! -f $f ]]
@@ -316,6 +363,9 @@ extract () {
     esac
 }
 
+# Grep the process list without matching the grep itself: the first
+# character of the pattern sits in a bracket expression, which cannot
+# match the literal command line of this grep.
 psg () {
     if [[ -z ${1:-} ]]
     then
@@ -325,6 +375,10 @@ psg () {
     ps aux | grep -i -- "[${1:0:1}]${1:1}"
 }
 
+# Kill whatever listens on a TCP port.  lsof where it exists, ss
+# otherwise; both produce one pid per line, and `mapfile' keeps one pid
+# per array element so `kill' gets several arguments and no word
+# splitting.
 kport () {
     local p=${1:-} one='' pids=()
     if [[ -z $p ]]
@@ -356,6 +410,8 @@ kport () {
     fi
 }
 
+# Throwaway HTTP server in the current directory, over python3 where it
+# exists.  Prints the URL first, so the port is in the scrollback.
 serve () {
     local p=${1:-8000}
     printf 'serving %s on http://localhost:%s\n' "$PWD" "$p"
@@ -392,6 +448,8 @@ ports () {
     fi
 }
 
+# A timestamped copy of a file next to it, and the copy's name on stdout
+# so it can be captured: `bak notes.org' then edit without fear.
 bak () {
     local f=${1:-}
     if [[ -z $f ]]
@@ -404,6 +462,8 @@ bak () {
     cp -p -- "$f" "$d" && printf '→ %s\n' "$d"
 }
 
+# Floating point maths through awk: the shell has no floats, and awk is
+# everywhere.  LC_ALL=C so the decimal separator is a dot.
 calc () {
     if (($# == 0))
     then
@@ -413,6 +473,8 @@ calc () {
     LC_ALL=C awk "BEGIN { printf \"%.10g\\n\", $* }"
 }
 
+# Pretty-print JSON with python3, or pass it through unchanged when
+# python3 is not installed.
 json () {
     if __cc_has python3
     then
@@ -422,6 +484,8 @@ json () {
     fi
 }
 
+# The PATH, numbered, one entry per line: `paths | grep python' answers
+# 'which python am I actually getting' without a loop.
 paths () {
     local IFS=: i=0 p
     for p in $PATH
@@ -499,12 +563,16 @@ tools () {
     return 0
 }
 
+# Re-source the rc.  CC_RELOAD tells `cc_boot' that this is a reload, so
+# the greeting stays quiet the second time.
 reload () {
     printf 'reloading %s\n' "$CC_RC_FILE"
     # shellcheck source=/dev/null
     CC_RELOAD=1 . "$CC_RC_FILE"
 }
 
+# Jump to the root of the current git work tree, walking up the same way
+# the prompt's git segment does.
 cdroot () {
     local d=$PWD
     while :
@@ -537,6 +605,8 @@ ai () {
     command eca-cli --workspace "$root" "$@"
 }
 
+# Find by name fragment: case-insensitive, and .git and node_modules are
+# skipped so the answer is the file you meant.
 ff () {
     if [[ -z ${1:-} ]]
     then
@@ -553,6 +623,7 @@ hist-top () {
     awk '!/^#/ && NF { print $1 }' "$f" | sort | uniq -c | sort -rn | head -n "$n"
 }
 
+# Grep the command history.
 hgrep () {
     history | grep -- "${1:-}"
 }
@@ -584,6 +655,8 @@ rc-time () {
 # The one-line git shortcuts (gst, gd, gco, ...) are generated from
 # `bash-git-shortcuts' in bash.scm; only the multi-line ones stay here.
 
+# The graph log.  One-line git shortcuts are data in bash.scm; anything
+# that needs more than one line stays here, where it reads as shell.
 glog () {
     local n=${1:-20}
     git log --graph --abbrev-commit --decorate --date=short \
@@ -595,6 +668,12 @@ glog () {
 # -----------------------------------------------------------------------------
 # Boot: colours, prompt hook, greeting. Called once at the end of the rc file.
 # -----------------------------------------------------------------------------
+# The last line of the rendered rc, and the only function in this file the
+# generated file calls by name.  It turns prompt expansion off (PS1 is fully
+# expanded here, and a directory called `$(cmd)' must not run anything),
+# stops C-s from freezing the terminal, builds the palette, installs
+# `__cc_prompt' as PROMPT_COMMAND exactly once - a reload must not stack it -
+# draws the first prompt and greets.
 cc_boot () {
     # PS1 is already fully expanded here; leaving promptvars on would let a
     # directory called "$(cmd)" run cmd every time the prompt is drawn.

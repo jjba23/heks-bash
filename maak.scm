@@ -30,6 +30,21 @@
 ;; the task can see it.  `time-machine-manifest-shell` covers the tasks that
 ;; need the project's own libraries, which are in the pinned manifest rather
 ;; than in the machine's profile.
+;;
+;; The tasks, in the order a contributor meets them:
+;;
+;;   install-bash     render the configuration into ~/.bashrc (what users run)
+;;   render           render it to a file instead, and refresh the committed lesskey
+;;   check            the gate: shellcheck, then the Guile suite
+;;   install-ble-sh   fetch the pinned ble.sh and rebuild it under ~/.local
+;;   agents           regenerate AGENTS.md from the pinned skills
+;;
+;; `slurp' and `fetch-skill' are helpers, not tasks: Maak lists every public
+;; definition in this module, and those two exist only to serve `agents'.
+;;
+;; Nothing here glues a command together with a shell string.  A task that needs
+;; a pipe, a pattern or a variable asks `run' for `#:expand? #t', so a value from
+;; outside never becomes shell syntax.
 
 ;;; Code:
 

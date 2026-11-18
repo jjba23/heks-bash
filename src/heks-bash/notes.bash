@@ -28,18 +28,82 @@
 #
 # The basics of the Emacs notes setup (heks-emacs: notes.el and friends) for a
 # shell, for when Emacs is not at hand.  It reads and writes the same plain
-# files, in the same formats, so the two never disagree:
+# files, in the same formats, so the two never disagree.  What follows is the
+# contract; docs/notes-format.org states the same thing as a document, and
+# test/heks-bash.scm only checks that the file this gets spliced into loads.
+#
+# The tree
 #
 #   $NOTES_DIR/<topic>/<slug>.org     one Org file per note, topics are folders
+#   $NOTES_DIR/<topic>/<sub>/…         topics nest, one folder per level
 #   $NOTES_DIR/todo.org               the inbox (`* Inbox' with `** TODO' items)
 #   $NOTES_DIR/habits.org             TODOs with a `.+1w'-style repeater
 #   $NOTES_DIR/contacts.org           contacts, details as properties
 #   $NOTES_DIR/bookmarks.org          headings are categories, links bookmarks
 #   <topic>/index.org                 generated between BEGIN/END markers
+#   $NOTES_DIR/.archive/…             the same, filed away; indexed, not listed
 #
-# Everything is one command, `n'.  fzf is used for the pickers when it is
-# there; without it the prompts are plain.  Only coreutils, sed, awk and grep
-# are required (rg is used when present).  Run `n help' for the list.
+# Hidden directories are skipped everywhere, and so is a root-level `diary':
+# that one is Emacs's calendar, not a topic.
+#
+# What a note is
+#
+#   #+title: <the title, as typed>
+#   #+date: [YYYY-MM-DD Www]          (Org active timestamp)
+#   #+filetags: :one:two:             (only when tags were given)
+#                                     (blank line)
+#   <the body>
+#
+# The file name is the slug of the title - lower case, runs outside [a-z0-9]
+# collapsed to a dash - and a collision becomes -2, -3, … rather than an
+# overwrite.  `#+title:' is what the index pages link with, and the file name
+# is the fallback when a note has none.
+#
+# The index pages
+#
+# Only the region between `# BEGIN GENERATED INDEX' and `# END GENERATED
+# INDEX' belongs to this code.  The `#+' lines above it, the prose description
+# and anything after the end marker are preserved verbatim, and a page without
+# the markers is somebody's own page and is left alone.  Inside the region:
+#
+#   * Topics                          subdirectories, as links (root page only)
+#   - [[file:./sub/index.org][Sub]]
+#   * Notes                           the notes in this directory, by title
+#   - [[file:./slug.org][Title]]
+#
+# Anything else under $NOTES_DIR - todo.org, contacts.org, index.org itself -
+# is not a note and is not linked.  The write is skipped when nothing would
+# change, so `n index' over the whole tree is cheap and safe.
+#
+# The other four files
+#
+#   todo.org      `** TODO <text>' + :PROPERTIES: / :CREATED: / :END:, appended
+#                 to the end of the `* Inbox' subtree; created on first use.
+#   habits.org    read only: `* TODO <text>' and a SCHEDULED: line whose date
+#                 this code compares against today.  Emacs owns the repeaters.
+#   contacts.org  `* Name' + a property drawer with :EMAIL:/:PHONE:/:BIRTHDAY:.
+#                 The birthday accepts YYYY-MM-DD, --MM-DD and MM-DD.
+#   bookmarks.org headings are categories (`* Work' / `** Docs'), a bookmark is
+#                 `- [[url][title]]' in the body.  Never created: it is the
+#                 user's file.
+#
+# How it fails
+#
+# Every message is `n: <what is wrong>' on stderr and a non-zero return; the
+# exit code is 2 for a usage error and 1 for anything else.  Writes to todo.org
+# and bookmarks.org go through a temporary file and a rename, so an interrupted
+# command cannot truncate them.  The notes tree is only ever touched below
+# $NOTES_DIR, and NOTES_DIR itself is never created: a missing one is an error,
+# not an empty tree to be made.
+#
+# What it needs
+#
+# coreutils, sed, awk, grep, find and less.  Nice to have: fzf (the pickers;
+# without it every command prints its rows instead), rg (search), curl (a
+# bookmark's title), a clipboard tool (pbcopy/pbpaste, wl-copy/wl-paste, xclip),
+# an opener (xdg-open/open) and Emacs (emacsclient).  None of them is required:
+# the pickers fall back to listings, the clipboard to an empty capture, the
+# opener to printing the URL.  Run `n help' for the verbs.
 # =============================================================================
 
 : "${NOTES_DIR:=$HOME/Hacking/private-notes}"
@@ -50,16 +114,29 @@ declare -A CC_NOTES_ACRONYMS=(
     [adr]=ADR [http]=HTTP [apis]=APIs
 )
 
+# The one way this file reports a problem: `n: <message>' on stderr, and
+# a non-zero return for the caller to propagate.
 __n_die () { printf 'n: %s\n' "$*" >&2; return 1; }
 
+# The notes directory, with any trailing slash removed, so every path in
+# this file is `$(__n_root)/...' and never double-slashed.
 __n_root () { printf '%s' "${NOTES_DIR%/}"; }
 
+# Refuse to work without a notes directory.  Failing here is the
+# difference between an error and a note written into a directory that
+# does not exist yet.
 __n_check () {
     [[ -d ${NOTES_DIR:-} ]] || { __n_die "no notes directory (NOTES_DIR=${NOTES_DIR:-unset})"; return 1; }
 }
 
+# May this command use a picker?  fzf must exist AND stdout must be a
+# terminal.  This single predicate decides picker versus plain listing
+# in all eight commands that use fzf, which is why the fallback paths
+# are a listing rather than a prompt loop.
 __n_tty () { __cc_has fzf && [[ -t 1 ]]; }
 
+# Strip leading and trailing whitespace with parameter expansion only -
+# no subshell, and no fork in anything that runs per note.
 __n_trim () {
     local s=$1
     s=${s#"${s%%[![:space:]]*}"}
@@ -67,6 +144,9 @@ __n_trim () {
     printf '%s' "$s"
 }
 
+# A filename-safe form of a title: lower case, runs of anything outside
+# [a-z0-9] collapsed to one dash, dashes trimmed, `untitled' when the
+# result would be empty.
 __n_slug () {
     local s=${1,,}
     s=$(printf '%s' "$s" | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
@@ -93,6 +173,8 @@ __n_pretty () {
     printf '%s\n' "${out[*]}"
 }
 
+# The title of a note: its first `#+title:' line, or the file name
+# without .org when it has none.  This is what the index links show.
 __n_title () {
     local t f=$1
     t=$(sed -n -e 's/^#+[Tt][Ii][Tt][Ll][Ee]:[[:space:]]*//p' "$f" 2> /dev/null | head -n 1 | sed -e 's/[[:space:]]*$//')
@@ -104,10 +186,17 @@ __n_title () {
     printf '%s\n' "$t"
 }
 
+# Every timestamp in this file goes through here, with LC_ALL=C, so no
+# date depends on the locale of the shell that ran it.
 __n_now () { LC_ALL=C date "$@"; }
 
+# An epoch mtime on both GNU and BSD stat.  Used to age topics in the
+# picker, never to order the index.
 __n_mtime () { stat -c %Y "$1" 2> /dev/null || stat -f %m "$1" 2> /dev/null; }
 
+# Read the clipboard, or print nothing: pbpaste on macOS, wl-paste on
+# Wayland, xclip on X11.  A missing clipboard is not an error, it is an
+# empty capture.
 __n_clipboard () {
     if __cc_has pbpaste
     then
@@ -121,6 +210,7 @@ __n_clipboard () {
     fi
 }
 
+# Write to the clipboard, or do nothing when there is no clipboard tool.
 __n_copy () {
     if __cc_has pbcopy
     then
@@ -134,6 +224,8 @@ __n_copy () {
     fi
 }
 
+# Hand a URL to the desktop, or print it when there is no desktop: over
+# SSH the printed URL is the useful answer.
 __n_open_url () {
     if __cc_has xdg-open
     then
@@ -163,6 +255,9 @@ __n_edit () {
 }
 
 # ---- topics ----------------------------------------------------------------
+# Every topic directory under the root, relative and sorted in C order.
+# Hidden directories and a root-level `diary' are skipped: that one is
+# Emacs's calendar, not a topic.
 __n_topics () {
     local root; root=$(__n_root)
     ( cd "$root" 2> /dev/null && find . -mindepth 1 -type d -not -path '*/.*' \
@@ -208,6 +303,12 @@ __n_topic_name () {
 }
 
 # Ask where a note goes; sets REPLY.  A topic that does not exist is made.
+#
+# fzf is asked for `--print-query --expect=ctrl-n' on purpose: the three lines
+# that come back are the text typed, the key pressed and the line selected, so
+# typing a new topic and picking an existing one are the same interaction.
+# Without a terminal the topics are listed on stderr and one line is read from
+# the user, which is the one place the fallback still prompts.
 __n_pick_topic () {
     local root topic='' out
     root=$(__n_root)
@@ -291,6 +392,13 @@ __n_new () {
 }
 
 # n capture [-t topic] [-T title] [-g tags] [-c] [text...]   (or pipe text in)
+#
+# The fast path: capture first, file later.  The text comes from the arguments,
+# the clipboard (-c), standard input when it is not a terminal, or a prompt, in
+# that order.  The title defaults to the first 60 characters of the text and is
+# offered for editing, so a capture is one line of typing and no menu.  A
+# multi-line capture is wrapped in a quote block before it is written, which is
+# what keeps a pasted log from becoming a heading.
 __n_capture () {
     __n_check || return 1
     local topic='' title='' tags='' clip=0 text='' file
@@ -338,6 +446,10 @@ __n_capture () {
 }
 
 # ---- finding ---------------------------------------------------------------
+# The rows the note picker shows and the plain listing prints:
+# `title \t relpath' for every org file under the root, case-insensitively
+# sorted.  One grep per file, which is why it only runs when a picker or a
+# listing is actually asked for.
 __n_note_lines () {
     local root; root=$(__n_root)
     (
@@ -408,6 +520,13 @@ __n_cd () {
 
 # ---- todos & habits --------------------------------------------------------
 # n todo "text"  -- into the Inbox of todo.org, the way Emacs captures it
+#
+# The entry is placed by awk at the end of the `* Inbox' subtree - immediately
+# before the next `* ' heading - with blank lines buffered and re-emitted after
+# it, so the section keeps its trailing blank line.  A file with no Inbox
+# heading gets one, appended with the entry.  The insertion is a rewrite
+# through todo.org.tmp and a rename: an interrupted command cannot truncate the
+# file, which is the one property this code will not give up for brevity.
 __n_todo_add () {
     __n_check || return 1
     local text="$*" file
@@ -468,9 +587,16 @@ __n_daynum () {
     printf '%s' $((era * 146097 + doe))
 }
 
+# Leap-year predicate, used to fold 29 February onto the 28th in the
+# years that do not have one.
 __n_leap () { local y=$1; ((y % 4 == 0 && (y % 100 != 0 || y % 400 == 0))); }
 
 # Birthdays within N days (default 30), from the :BIRTHDAY: properties.
+#
+# Three shapes are accepted - YYYY-MM-DD, --MM-DD and MM-DD - and the age is
+# shown only when the year is known.  A date that has already passed rolls into
+# next year, and 29 February lands on the 28th in a year without one, so the
+# answer does not depend on which year you ask in.
 __n_birthdays () {
     __n_check || return 1
     local days=${1:-30} file
@@ -547,6 +673,9 @@ __n_today () {
 }
 
 # ---- contacts --------------------------------------------------------------
+# contacts.org as rows: `name \t email \t phone \t birthday' for each
+# level-1 heading.  Level-1 headings are the contract; the properties under
+# them are optional, and an absent one becomes an empty field.
 __n_contact_lines () {
     awk '
         function flush() { if (name != "") print name "\t" email "\t" phone "\t" bd }
@@ -717,6 +846,7 @@ __n_bookmark_add () {
     printf 'bookmarked under %s\n' "$cat"
 }
 
+# `n bookmark' verbs: `add' writes, anything else opens.
 __n_bookmark () {
     case ${1:-} in
         add) shift; __n_bookmark_add "$@" ;;
@@ -725,6 +855,11 @@ __n_bookmark () {
 }
 
 # ---- index pages -----------------------------------------------------------
+# May this directory have an index page?  It must be inside the root; the
+# root and .archive are always fine; .git, .metals and the root-level diary
+# are refused, and so is anything below .archive whose path segments start
+# with a dot.  The point is that a generated page never appears in a
+# directory the user did not file notes into.
 __n_index_dir_ok () {
     local root dir=${1%/} rel
     root=$(__n_root)
@@ -741,6 +876,16 @@ __n_index_dir_ok () {
 # Rebuild the generated part of DIR/index.org (an index without the markers is
 # somebody's own page and is left alone).  Same format as notes.el writes.
 # Sets REPLY=written when the file changed.
+#
+# Three things belong to the page's author and are carried over untouched: the
+# `#+' keyword lines and any property drawer above the body (head), the prose
+# before the generated region (desc) and everything after the end marker
+# (tail).  Subdirectories are recursed into before being linked, and only when
+# they hold at least one org file; their labels go through __n_pretty, so
+# `http-apis' links as `HTTP APIs'.  Sorting is LC_ALL=C -f: code-point order,
+# which is what the Emacs side writes and what keeps an emoji after the
+# letters.  The write is skipped when the bytes would not change, so running
+# this over the whole tree is cheap.
 __n_index_update () {
     local root dir=${1%/}
     root=$(__n_root)
@@ -898,6 +1043,11 @@ __n_index_up () {
 }
 
 # n index -- every index page, children first
+#
+# Deepest first, so a subdirectory is indexed before the page that links to it,
+# and the root last: one generation pass, no second run to settle.  The walk
+# includes .archive (filed-away notes still get pages) and skips hidden
+# directories and the root-level diary.
 __n_index_all () {
     __n_check || return 1
     local root d count=0
@@ -918,6 +1068,10 @@ __n_index_all () {
 }
 
 # ---- the command -----------------------------------------------------------
+# The whole interface: one word of verb, then its arguments.  Every arm is a
+# `__n_*' helper, so the dispatch stays readable and the verbs stay greppable.
+# `help' is the default, and an unknown verb is exit code 2 - a usage error -
+# which is what a script can test for.
 n () {
     local cmd=${1:-help}
     (($#)) && shift
@@ -971,6 +1125,8 @@ alias nf='n find'
 alias nx='n todo'
 alias nt='n today'
 
+# Completion for `n': the verbs in the first position, the topics in the
+# second.  Registered only in a bash with programmable completion.
 _n_complete () {
     local cur=${COMP_WORDS[COMP_CWORD]}
     if ((COMP_CWORD == 1))

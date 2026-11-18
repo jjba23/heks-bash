@@ -44,6 +44,15 @@
 ;; duration of a case and are restored afterwards.
 ;;
 ;; Run it with:  guile -L ./src test/heks-bash.scm
+;; or, with the linter and the pinned toolchain:  maak check
+;;
+;; Adding a test: the pure half is a `test-assert' over `rendered' or over one
+;; of the serialisers, and needs nothing else.  The shell half is a script for
+;; `run-shell-case' - it gets a fresh temporary home with the rc already
+;; installed, a PATH holding only the system directories, and its standard error
+;; captured to a file, so "nothing was printed on stderr" is something a test
+;; can assert.  A case that needs a terminal asks for `#:interactive? #t' and
+;; asserts markers, because a pty echoes and merges the two streams.
 
 ;;; Code:
 

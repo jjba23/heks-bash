@@ -21,6 +21,50 @@
 ;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;; IN THE SOFTWARE.
 
+;;; Commentary:
+;;
+;; The Bash rendering.  This module is the machine half of heks-bash: the
+;; identity, the variables, the aliases, the greetings, the pager keymap and the
+;; dependency table are data here, and the file a shell reads is rendered from
+;; them by `bash-config'.
+;;
+;; Two halves, and the seam between them is the point:
+;;
+;;   Scheme, in this module    the data - who this machine is, what is aliased,
+;;                             which keys page, which tools are expected
+;;   Bash, in shell-lib.bash   the procedure - prompt engine, git segment,
+;;                             helpers; spliced in verbatim, never generated
+;;   Bash, in notes.bash       the `n' command; spliced in verbatim
+;;
+;; `bash-config' returns the file as a list of chunks, in the order a shell
+;; meets them:
+;;
+;;    1. the header and the CC_* identity, CC_VERSION among them
+;;    2. the prelude: the system rc, ble.sh, the readline bindings, shopt,
+;;       and `include()' for optional fragments
+;;    3. the exported variables
+;;    4. the data arrays the library reads: CC_GREETINGS, CC_PAGER_KEYS_*,
+;;       CC_TOOLS
+;;    5. shell-lib.bash, verbatim
+;;    6. the git shortcuts, as functions
+;;    7. notes.bash, verbatim, after NOTES_DIR
+;;    8. machine functions, aliases and PATH prepends
+;;    9. the postlude: bash-completion, fzf, direnv, the Guix profile
+;;   10. `cc_boot', the call that colours, hooks and greets
+;;
+;; Rendering is a pure function of the parameters, which is what makes the file
+;; testable: `maak render' writes it out, and test/heks-bash.scm renders it
+;; twice, diffs the two, then sources it in a synthetic home and asks the shell
+;; what it got.  `install-bash' is the only entry point that writes outside a
+;; path it was given, and even that takes `#:target'.
+;;
+;; Everything configurable is a `(make-parameter value)', so another machine
+;; rebinds the parameters it cares about - a different sigil, a different
+;; greeting pool, a different notes directory - and calls `install-bash'.  No
+;; function in this module reads a parameter that a caller cannot replace.
+;;
+;; ;;; Code:
+
 (define-module (heks-bash bash)
   #:declarative? #t
   #:use-module (ice-9 match)
@@ -63,14 +107,28 @@
                          write-rendered
                          heks-bash-clone-dir))
 
-;; Parameters
+;;; Parameters
+;;
+;; One parameter per thing a machine may want to differ.  The defaults are this
+;; machine's; a caller rebinds before `install-bash' and nothing else changes.
+
 (define heks-bash-version
-  (make-parameter "2.2.0"))
+  ;; The one version string.  It reaches the rendered header, CC_VERSION (so
+  ;; `about' prints it), the README and the release notes; a release bumps it
+  ;; here first and everywhere else follows.
+  (make-parameter "2.2.1"))
+
 (define heks-bash-clone-dir
+  ;; Where this repository is cloned, for aliases that run its tasks.
   (make-parameter "~/Hacking/heks-bash"))
+
 (define heks-linux-clone-dir
+  ;; Where the heks-linux configuration is cloned: five aliases run `maak'
+  ;; there, so a machine without that checkout simply has five dead aliases.
   (make-parameter "~/Hacking/heks-linux"))
+
 (define heks-bash-ble-sh-dir
+  ;; Where `install-ble-sh' puts ble.sh, and where the rc sources it from.
   (make-parameter "~/.local/share/blesh"))
 
 ;; ble.sh builds itself and moves with `ble-update', so the installer pins it
@@ -115,7 +173,22 @@
                     ("CC_ACCENT" . "99")
                     ("CC_RC_FILE" . "$HOME/.bashrc"))))
 
+;;; The prelude and the postlude
+;;
+;; The two ends of the file, and the only parts of it that are Bash written as
+;; Scheme strings rather than spliced from a library.  They are short, ordered
+;; and about the environment: what to source, what to bind, what to probe.
+
 (define (bash-prelude)
+  "Return the lines that open the rendered file: the system rc, ble.sh, the
+readline bindings, the shopt settings the rest relies on, and the `include'
+helper the postlude and the machine fragments are written in terms of.
+
+The completion layer is asked for once - `CC_COMPLETIONS' - because ble.sh, the
+bindings and bash-completion all need a bash built with readline and
+programmable completion, and Nix's bash has neither.  The bindings themselves
+also need an interactive shell: readline only listens there, and says so on
+stderr everywhere else."
   (list "[ -f /etc/bashrc ] && . /etc/bashrc"
         ;; ble.sh, the readline bindings and bash-completion all need a bash
         ;; built with readline and programmable completion.  Nix's bash has
@@ -147,6 +220,14 @@
         "include ~/.bash-heks-linux-bridge.bash"))
 
 (define bash-vars
+  ;; Exported variables, in the order they appear in the file.  HISTORY* is
+  ;; configured here and again in shell-lib.bash on purpose: this is the
+  ;; declared value, the library's `:-' assignment is the fallback for an rc
+  ;; without this module.
+  ;;
+  ;; `EDITOR' points at a script `install-bash' writes (`smart_emacsclient'),
+  ;; which picks the GUI or the terminal client at call time - the one piece of
+  ;; this file that is a program rather than a setting.
   (make-parameter `((GREEN_TEXT . "$(tput setaf 2)")
                     (RED_TEXT . "$(tput setaf 1)")
                     (RESET_TEXT . "$(tput sgr0)")
@@ -171,7 +252,10 @@
 ;; LESSKEYIN) is set by the same library.
 
 (define (mkdir-p path)
-  "Recursively creates PATH and all required parent directories."
+  "Recursively creates PATH and all required parent directories.
+Used at install time only: the rendered file never creates a directory.  A path
+that exists as something other than a directory is an error, not a file to be
+replaced."
   (unless (or (string-null? path)
               (file-exists? path))
     (let ((parent (dirname path)))
@@ -188,6 +272,12 @@
                  (apply throw key args)))))))
 
 (define (ensure-smart-emacsclient-bin)
+  "Write ~/.local/bin/smart_emacsclient, the program EDITOR points at.
+
+It forwards to emacsclient in GUI mode when there is a display and in terminal
+mode otherwise, with `-a \"\"' so a missing server is an error rather than a
+silently started daemon.  The file is rewritten on every install: it is a
+rendering of this module, not a file to edit in place."
   (let* ((home (getenv "HOME"))
          (bin-dir (format #f "~a/.local/bin" home))
          (script-path (format #f "~a/smart_emacsclient" bin-dir))
@@ -205,13 +295,16 @@ fi
 
     (when (file-exists? script-path)
       (delete-file script-path))
-    (dirname script-path)
     (with-output-to-file script-path
       (lambda ()
         (display script-content)))
     (chmod script-path #o755)))
 
 (define bash-path-prepends
+  ;; Directories this configuration wants in front of PATH, in priority order.
+  ;; The renderer exports each one only when it exists, so a machine without a
+  ;; Guix profile or a krew checkout gets no dead entries - the placeholder is
+  ;; written with `${...:-default}' so KREW_ROOT can be set elsewhere.
   (make-parameter '("${KREW_ROOT:-$HOME/.krew}/bin" "$HOME/.local/bin"
                     "$HOME/bin"
                     "$HOME/.guix-profile/bin"
@@ -220,9 +313,13 @@ fi
                     "/usr/local/bin")))
 
 (define* (bash-aliases #:key (clone-dir (heks-bash-clone-dir)))
+  "Return every alias, shared ones first and this machine's after, so a machine
+alias of the same name wins: `alias' in the rendered file is last-one-wins."
   (append
    bash-shared-aliases
    (bash-machine-aliases #:clone-dir clone-dir)))
+
+;;; Data: aliases, git shortcuts and greetings
 
 (define bash-shared-aliases
   ;; Navigation, emacs, podman, fetch, ...: the set every machine shares.
@@ -259,8 +356,12 @@ fi
     (gfetch . "git fetch --all --prune \"$@\";")
     (groot . "cdroot;")))
 
+;;; Data: the greeting pool
+
 ;; The greeting pool: nerd-style sayings about free software, RMS, GNU, Emacs
-;; and Linux/Unix.  Plain data; extend freely.
+;; and Linux/Unix.  Plain data; extend freely.  The leading `;;' groups are for
+;; a reader of this file only - the shell code chooses with an index, so the
+;; group a saying sits in changes nothing about when it appears.
 (define bash-greetings
   (make-parameter
    '(;; emacs
@@ -501,6 +602,9 @@ command substitution in the rc."
         (string->list s))))
 
 (define (serialize-bash-greetings)
+  "Render the greeting pool as the array `shell-greeting' picks from.
+Each saying is escaped for a double-quoted string, so a backtick in a saying
+stays a character instead of running a command at startup."
   (string-append
    "CC_GREETINGS=(\n"
    (string-join (map (lambda (g)
@@ -550,6 +654,13 @@ command substitution in the rc."
      )))
 
 (define (bash-postlude)
+  "Return the lines that close the rendered file, after everything it sources.
+
+This is the half that bolts the optional integrations on: bash-completion, fzf's
+bash bindings, mise, direnv and the Guix profile.  Every one of them is probed
+or `include'd, so a machine without it loses the integration and nothing else -
+and the completion three sit behind `CC_COMPLETIONS' because they need the
+builtins a Nix bash does not have."
   (list "set -o noclobber"
    ;; `set -o emacs' (readline) and everything completion related live here
    ;; too; CC_COMPLETIONS comes from the prelude.
@@ -574,13 +685,26 @@ command substitution in the rc."
    "command -v direnv &>/dev/null && eval \"$(direnv hook bash)\""
    "[ -f \"$GUIX_PROFILE/etc/profile\" ] && . \"$GUIX_PROFILE/etc/profile\""))
 
-;; Serialization Functions
+;;; Serialisers
+;;
+;; One function per shape of thing, each returning the Bash that expresses it.
+;; They are small on purpose: a serialiser that is easy to read is a rendering
+;; a reader can check, and the tests compare their output rather than parsing
+;; the rendered file.
+
 (define (serialize-bash-alias a)
+  "Render one alias, @var{a} as @code{(NAME . BODY)}, as an `alias' line.
+The body is not escaped: an alias whose body needs a literal double quote is
+written with single quotes in the body itself, which is what makes the
+`tui-emacs' alias in `bash-machine-aliases' read the way it does."
   (format #f "alias ~a=\"~a\"\n"
           (car a)
           (cdr a)))
 
 (define (serialize-bash-var v)
+  "Render one exported variable, @var{v} as @code{(NAME . VALUE)}.
+The value is written between double quotes as given, so `$(tput setaf 2)' in
+`bash-vars' is a command substitution in the shell and not a literal."
   (format #f "export ~a=\"~a\"\n"
           (car v)
           (cdr v)))
@@ -592,6 +716,10 @@ command substitution in the rc."
   (format #f "[[ -d \"~a\" ]] && export PATH=\"~a:$PATH\"\n" p p))
 
 (define (serialize-bash-function f)
+  "Render @var{f} as @code{(NAME . BODY)} as a shell function.
+A body that is a list becomes one line per element, tab-indented; a body that
+is a string is spliced as one line.  That is why the git shortcuts can be a
+table of one-liners while `glog' stays a multi-line function in the library."
   (format #f "~a () {\n\t~a\n}\n\n"
           (car f)
           (if (list? (cdr f))
@@ -607,9 +735,11 @@ only read by the shared shell library."
           (cdr a)))
 
 (define (read-source-file name)
-  "Return the contents of the repository file @var{name} as a string.
+  "Return the repository file @var{name} as a string.
 The file sits next to this module, so look there first and fall back to the
-repository-relative path for setups that load compiled code."
+repository-relative path for setups that load compiled code.  A file that cannot
+be found is an error: a rendered rc without its prompt engine is worse than no
+rc at all."
   (let* ((here (and (current-filename)
                     (dirname (current-filename)))))
     (let loop
@@ -625,11 +755,15 @@ repository-relative path for setups that load compiled code."
             (else (loop (cdr paths)))))))
 
 (define (read-shell-lib)
-  "Return the contents of the shared shell library as a string."
+  "Return the contents of the shared shell library as a string.
+Spliced verbatim: the library is Bash a person edits as Bash, and the only
+thing this module knows about it is where it lives."
   (read-source-file (shell-lib-filename)))
 
 (define (read-notes-lib)
-  "Return the contents of the notes helpers as a string."
+  "Return the contents of the notes helpers as a string.
+Spliced after the library because it uses `__cc_has', and after NOTES_DIR
+because it reads that variable at call time."
   (read-source-file (notes-filename)))
 
 (define (lesskey-target-path)
@@ -643,6 +777,15 @@ is the first place less(1) looks for it."
     (format #f "~a/lesskey" conf)))
 
 (define* (bash-config #:key (clone-dir (heks-bash-clone-dir)))
+  "Return the whole configuration as a list of chunks, in the order a shell
+meets them: header and identity, prelude, variables, the data arrays the
+library reads, the library itself, the git shortcuts, the notes command, the
+machine's functions and aliases, the PATH prepends, the postlude, and finally
+the `cc_boot' call that starts the prompt.
+
+Pure: no file is read except the two shell libraries beside this module, and
+nothing is written.  `write-bash-config' and `install-bash' are the writing
+entries, and this is the function they agree on."
   (append (list "# shellcheck shell=bash"
                 "# shellcheck disable=SC1090  # include() sources rc fragments by path"
                 "# shellcheck disable=SC2155  # the tput colour exports are intentional"
@@ -693,6 +836,13 @@ return nothing.  Rendering is a pure function of the parameters, so this is
 what a golden file and a diff are made of."
   (set-port-encoding! (current-output-port) "UTF-8")
   (display (string-join (bash-config #:clone-dir clone-dir) "\n")))
+
+;;; Rendering and installing
+;;
+;; `bash-config' is the pure render; these are the writers.  `write-bash-config'
+;; and `write-lesskey' write exactly one file each and are what tests and
+;; `maak render' call; `install-bash' is the entry point a person runs, and the
+;; only one that touches the home directory.
 
 (define (write-rendered path text)
   "Write @var{text} to @var{path} as UTF-8 and return @var{path}."
