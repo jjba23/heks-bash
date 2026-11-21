@@ -22,6 +22,7 @@
 ;; IN THE SOFTWARE.
 
 (use-modules (guix packages)
+             (gnu packages)
              (gnu)
              (guix utils)
              (guix download)
@@ -38,7 +39,7 @@
 
 (packages->manifest (list guile-next
                           (specification->package "guile-json@4")
-                          texinfo
+                          (specification->package "texinfo")
                           guile-gcrypt
                           ;; `dokgen' documents the Guile half of the
                           ;; configuration; `specification->package' finds it
