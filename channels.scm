@@ -36,7 +36,7 @@
         (branch "trunk")
         ;; `guile-dokgen' lives here, so the documentation tasks and the Guile
         ;; tests are built against one pinned revision of the collection.
-        (commit "139880f859c578974f68d959c956ab25042b7258")
+        (commit "dc9f38c259e924bd9d15637498eb73a58a1f265d")
         (introduction
          (make-channel-introduction
           "b0ac3f05075d7959860fc9e1db5871acddea3986"

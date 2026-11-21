@@ -11,6 +11,19 @@ when it started doing it.  The version it describes lives in =bash.scm= as
 
 Nothing yet.
 
+* 2.2.3 - 2026-11-21
+
+No behaviour changed: the documentation generator the pinned collection carries
+becomes 0.9.1, and the API reference it writes is the single page
+=index.html= - which is what every link in the collection names now.
+
+** Changed
+
+- ~channels.scm~ pins the jointhefreeworld revision
+  ~dc9f38c259e924bd9d15637498eb73a58a1f265d~, which carries ~guile-dokgen~
+  0.9.1.  This configuration itself links to no API page, so there was no
+  =API.html= link here to point at =index.html=.
+
 * 2.2.2 - 2026-11-21
 
 No behaviour changed: the Guile half of the configuration is documented by
