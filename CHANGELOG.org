@@ -11,6 +11,29 @@ when it started doing it.  The version it describes lives in =bash.scm= as
 
 Nothing yet.
 
+* 2.2.2 - 2026-11-21
+
+No behaviour changed: the Guile half of the configuration is documented by
+guile-dokgen, and the two directions the module has are drawn where they are
+described.
+
+** Changed
+
+- ~maak docs~ runs ~dokgen~ instead of ~documenta~, writing the API chapter into
+  =doc/api= for ~texi2any~ to render as one page with the stylesheet, the script
+  and the diagrams beside it.
+- ~channels.scm~ pins Guix master ~5cea8de~ and the jointhefreeworld revision
+  ~139880f~, which is where ~guile-dokgen~ comes from; ~manifest.scm~ takes
+  dokgen from there, so the documentation tasks and the Guile tests are built
+  against one pinned revision of the collection.
+- Parameters in and rendered chunks out are a mermaid diagram in the README and
+  in the Commentary of =bash.scm=, with its source and SVG under
+  =resources/diagrams/= and a ~maak diagrams~ task that renders them.
+- =bash.scm='s prose section now closes on a real =;;; Code:= marker instead of
+  a commented-out one, and the Commentary names the two directions the module
+  has — parameters in, rendered chunks out — so the section a reader sees and
+  the section dokgen parses are the same one.
+
 * 2.2.1 - 2026-11-18
 
 A documentation release: no behaviour changed, and the only difference a user

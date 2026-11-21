@@ -40,6 +40,10 @@
                           (specification->package "guile-json@4")
                           texinfo
                           guile-gcrypt
-                          guile-documenta
+                          ;; `dokgen' documents the Guile half of the
+                          ;; configuration; `specification->package' finds it
+                          ;; in the jointhefreeworld channel `channels.scm'
+                          ;; pins.
+                          (specification->package "guile-dokgen")
                           guile-ares-rs))
 

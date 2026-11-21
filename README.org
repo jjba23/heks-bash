@@ -280,6 +280,23 @@ the sibling repositories carry.  ~maak check~ is the gate:
 =heks-bash-version= is the one version string: it reaches the rendered header,
 =CC_VERSION=, =about=, this page and the release notes.
 
+** How the configuration is rendered
+
+The parameters are the input, =bash-config= joins them with the two Bash
+fragments into a list of chunks, and the writers put that list where a shell can
+read it:
+
+#+attr_html: :width 720 :alt Flowchart: parameters and the Bash fragments are rendered by bash-config into chunks, which write-bash-config and write-lesskey write out
+[[file:resources/diagrams/rendering.svg]]
+
+The SVG is rendered from [[file:resources/diagrams/rendering.mmd][rendering.mmd]] by ~maak diagrams~, and the image is
+committed, so reading this page needs no renderer.
+
+~maak docs~ documents the Guile module that renders the file: ~dokgen~ writes the
+API chapter into =doc/api= and ~texi2any~ renders it to
+=doc/api-dist/index.html=.  The Bash files are documented here and in
+[[file:docs/notes-format.org][docs/notes-format.org]], because that is where their behaviour is described.
+
 ----------------
 
 ** Ble.sh

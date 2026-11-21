@@ -1,0 +1,7 @@
+flowchart LR
+  params["parameters<br/>identity, aliases, greetings, tools"] --> config["bash-config"]
+  libs["shell-lib.bash<br/>notes.bash"] --> config
+  config --> chunks["a list of chunks,<br/>in the order a shell reads them"]
+  chunks --> writer["write-bash-config<br/>write-lesskey"]
+  writer --> rc["~/.bashrc"]
+  writer --> pager["~/.config/lesskey"]

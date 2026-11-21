@@ -52,6 +52,19 @@
 ;;    9. the postlude: bash-completion, fzf, direnv, the Guix profile
 ;;   10. `cc_boot', the call that colours, hooks and greets
 ;;
+;; The two directions the module has - parameters in, rendered chunks out - are
+;; the whole design:
+;;
+;; ```mermaid
+;; flowchart LR
+;;   params["parameters<br/>identity, aliases, greetings, tools"] --> config["bash-config"]
+;;   libs["shell-lib.bash<br/>notes.bash"] --> config
+;;   config --> chunks["a list of chunks,<br/>in the order a shell reads them"]
+;;   chunks --> writer["write-bash-config<br/>write-lesskey"]
+;;   writer --> rc["~/.bashrc"]
+;;   writer --> pager["~/.config/lesskey"]
+;; ```
+;;
 ;; Rendering is a pure function of the parameters, which is what makes the file
 ;; testable: `maak render' writes it out, and test/heks-bash.scm renders it
 ;; twice, diffs the two, then sources it in a synthetic home and asks the shell
@@ -62,8 +75,8 @@
 ;; rebinds the parameters it cares about - a different sigil, a different
 ;; greeting pool, a different notes directory - and calls `install-bash'.  No
 ;; function in this module reads a parameter that a caller cannot replace.
-;;
-;; ;;; Code:
+
+;;; Code:
 
 (define-module (heks-bash bash)
   #:declarative? #t

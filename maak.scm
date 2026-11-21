@@ -36,6 +36,8 @@
 ;;   install-bash     render the configuration into ~/.bashrc (what users run)
 ;;   render           render it to a file instead, and refresh the committed lesskey
 ;;   check            the gate: shellcheck, then the Guile suite
+;;   docs             generate the API reference for the Guile module
+;;   diagrams         render the mermaid sources the README shows
 ;;   install-ble-sh   fetch the pinned ble.sh and rebuild it under ~/.local
 ;;   agents           regenerate AGENTS.md from the pinned skills
 ;;
@@ -51,7 +53,20 @@
 (define-module (maak)
   #:declarative? #t
   #:use-module (maak maak)
-  #:use-module ((ice-9 rdelim) #:select (read-line)))
+  #:use-module ((ice-9 rdelim) #:select (read-line))
+  ;; `scandir' names the mermaid sources `maak diagrams' renders.
+  #:use-module (ice-9 ftw))
+
+;; ====== Maak constants ======
+
+;; The URL for the CSS style-sheet used to style API documentation.
+(define api-docs-css-url
+  "https://jointhefreeworld.org/static/css/jointhefreeworld.css")
+
+;; The Guile module this project documents: the whole machine half of the
+;; configuration.  The Bash files are documented by `docs/notes-format.org'.
+(define project-name
+  'heks-bash)
 
 (define (default)
   "List the tasks this project defines."
@@ -89,6 +104,61 @@ trade, so a machine without it fails here with the one line that installs it.
   (time-machine-manifest-shell
    (list "guile" "-L" "./src" "test/heks-bash.scm")
    #:verbose? #t))
+
+(define (docs)
+  "Generate the API reference for the Guile half of the configuration.
+
+`dokgen' reads the modules under src/, writes the Texinfo chapter to doc/api
+and draws the mermaid diagrams their commentaries carry into
+doc/api/diagrams.  `texi2any' copies neither a stylesheet, a script nor an
+image into its output, so the HTML goes to doc/api-dist and the three are
+copied beside it afterwards.  Two calls, so a failure names the step that
+failed."
+  (delete-file-recursively "doc")
+  (time-machine-manifest-shell (list "dokgen" "api"
+                                     "--destination" "doc/api"
+                                     (~ "./src/~a" project-name))
+                               #:verbose? #t)
+  (mkdir-p "doc/api-dist")
+  ;; `-I doc/api' is what finds the diagrams beside the chapter, and the head
+  ;; below points the page at the stylesheet and the script `dokgen' writes
+  ;; there.  `--no-split' keeps the reference one page.
+  (time-machine-manifest-shell
+   (list "texi2any" "-v" "--html" "--no-split"
+         (~ "--css-ref=~a" api-docs-css-url)
+         "-I" "doc/api"
+         "-c" (shell-quote
+               (string-append
+                "EXTRA_HEAD="
+                "<link rel=\"stylesheet\" href=\"dokgen.css\">"
+                "<script src=\"dokgen.js\" defer></script>"))
+         "-o" "doc/api-dist/index.html"
+         "./doc/api/index.texi")
+   #:verbose? #t)
+  (for-each (lambda (asset)
+              (when (file-exists? (~ "doc/api/~a" asset))
+                (cp (~ "doc/api/~a" asset) "doc/api-dist"
+                    #:force? #t #:verbose? #t)))
+            '("dokgen.css" "dokgen.js"))
+  (when (file-exists? "doc/api/diagrams")
+    (cp "doc/api/diagrams" "doc/api-dist" #:force? #t #:verbose? #t)))
+
+(define (diagrams)
+  "Render every mermaid source under resources/diagrams to the SVG beside it.
+
+The images are committed, so this runs only when a diagram's source changes;
+the API reference draws the diagrams the commentaries carry during `docs'."
+  (for-each
+   (lambda (name)
+     (let* ((source (in-vicinity "resources/diagrams" name))
+            (image (string-append (string-drop-right source 4) ".svg")))
+       (run (list "mmdc" "-i" source "-o" image
+                  "--backgroundColor" "transparent")
+            #:verbose? #t)))
+   (scandir "resources/diagrams"
+            (lambda (name)
+              (and (not (member name '("." "..")))
+                   (string-suffix? ".mmd" name))))))
 
 (define (render . args)
   "Refresh every rendering that lives in the repository, and the rc.
