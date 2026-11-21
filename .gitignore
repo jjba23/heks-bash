@@ -1,2 +1,5 @@
 .nrepl-port
 bashrc.bash
+
+# Generated API reference and its rendered output.
+doc/
