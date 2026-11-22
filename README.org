@@ -8,6 +8,8 @@
 #+attr_html: :width 160 :alt Heks BASH logo
 [[file:logo.svg]]
 
+- 📖 *API reference:* [[https://jointhefreeworld.org/api-docs/heks-bash/index.html][Heks BASH API reference]]
+
 The all-mighty magical /Witch Bourne Again Shell declarative configuration/, supporting integration with many handy CLI tooling and handy aliases, customization, exports, and functions  using Lisp (Guile Scheme).
 
 Modern Shell Experience ✨ with:
