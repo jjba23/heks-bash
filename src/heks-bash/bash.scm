@@ -129,7 +129,7 @@
   ;; The one version string.  It reaches the rendered header, CC_VERSION (so
   ;; `about' prints it), the README and the release notes; a release bumps it
   ;; here first and everywhere else follows.
-  (make-parameter "2.2.1"))
+  (make-parameter "2.2.7"))
 
 (define heks-bash-clone-dir
   ;; Where this repository is cloned, for aliases that run its tasks.

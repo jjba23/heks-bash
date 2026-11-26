@@ -7,9 +7,18 @@ It is history, not a plan: the guide says what the configuration does, this says
 when it started doing it.  The version it describes lives in =bash.scm= as
 =heks-bash-version= and reaches the generated file, =about= and the tag.
 
-* Unreleased
+* 2.2.7 - 2026-11-26
 
-Nothing yet.
+No behaviour changed: the documentation generator the pinned collection carries
+becomes ~guile-dokgen~ 0.12.0, and the API reference it writes reads as a
+quieter page whose definitions open their source.
+
+** Changed
+
+- ~channels.scm~ pins the jointhefreeworld revision that carries ~guile-dokgen~
+  0.12.0: the published API reference folds the source behind each definition
+  into a panel a reader opens, and reads on a quieter page with translucent
+  surfaces.
 
 * 2.2.4 - 2026-11-21
 

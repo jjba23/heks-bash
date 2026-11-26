@@ -26,7 +26,7 @@ Modern Shell Experience ✨ with:
 
 The project is written mostly in Lisp  and Bash (shell script).
 
-This is =heks-bash 2.2.1=.  What changed, and what breaks, is in
+This is =heks-bash 2.2.7=.  What changed, and what breaks, is in
 [[file:CHANGELOG.org][CHANGELOG.org]]; the notes format has a page of its own in
 [[file:docs/notes-format.org][docs/notes-format.org]], and
 [[file:VISION.md][VISION.md]] says where this is going next.
